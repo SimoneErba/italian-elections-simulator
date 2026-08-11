@@ -160,7 +160,8 @@ const translations = {
     assignedSeat: "seggio assegnato",
     electedCandidatesFile: "parlamentari-proclamati.csv",
     cameraName: "Camera",
-    senateName: "Senato"
+    senateName: "Senato",
+    foreignName: "Estero"
   },
   en: {
     languageName: "English",
@@ -297,7 +298,8 @@ const translations = {
     assignedSeat: "assigned seat",
     electedCandidatesFile: "proclaimed-mps.csv",
     cameraName: "Chamber",
-    senateName: "Senate"
+    senateName: "Senate",
+    foreignName: "Foreign"
   }
 } as const;
 
@@ -1087,9 +1089,12 @@ function ChamberResult({
   const national = result.nationalResults[chamber];
   const [expandedCoalitions, setExpandedCoalitions] = useState<Set<string>>(() => new Set());
   const coalitionById = useMemo(() => new Map(scenario?.coalitions.map((coalition) => [coalition.id, coalition]) ?? []), [scenario]);
-  const listVoteTotals = useMemo(() => (scenario ? aggregateVotes(scenario)[chamber].listVotes : {}), [scenario, chamber]);
+  const displayVoteTotals = useMemo(() => (scenario ? aggregateVotes(scenario, true)[chamber] : undefined), [scenario, chamber]);
   const rows = national ? Object.entries(national.seats).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) : [];
   if (!national) return null;
+  const displayTotalValidVotes = displayVoteTotals?.totalValidVotes ?? national.totalValidVotes;
+  const listVoteTotals = displayVoteTotals?.listVotes ?? {};
+  const subjectVoteTotals = displayVoteTotals?.subjectVotes ?? national.votes;
   const toggleCoalition = (coalitionId: string) => {
     setExpandedCoalitions((current) => {
       const next = new Set(current);
@@ -1106,7 +1111,7 @@ function ChamberResult({
     <div className="chamberBlock">
       <div className="chamberHeader">
         <h3>{formatChamber(chamber, t)}</h3>
-        <span>{formatBigInt(national.totalValidVotes)} {t.validVotes}</span>
+        <span>{formatBigInt(displayTotalValidVotes)} {t.validVotes}</span>
       </div>
       <div className="tableScroller">
       <table className="nationalResultsTable">
@@ -1130,8 +1135,8 @@ function ChamberResult({
           {rows.map(([subjectId, seats]) => {
             const coalition = coalitionById.get(subjectId);
             const isExpanded = expandedCoalitions.has(subjectId);
-            const subjectVotes = national.votes[subjectId];
-            const subjectPercent = national.percentages[subjectId] ?? (subjectVotes === undefined ? undefined : percentage(subjectVotes, national.totalValidVotes));
+            const subjectVotes = subjectVoteTotals[subjectId];
+            const subjectPercent = subjectVotes === undefined ? undefined : percentage(subjectVotes, displayTotalValidVotes);
             return (
               <Fragment key={subjectId}>
                 <tr key={subjectId}>
@@ -1154,7 +1159,7 @@ function ChamberResult({
                       subjectNameById.get(subjectId) ?? subjectId
                     )}
                   </td>
-                  <td>{formatBigInt(national.votes[subjectId] ?? 0n)}</td>
+                  <td>{formatBigInt(subjectVotes ?? 0n)}</td>
                   <td>{subjectPercent ? formatPercent(subjectPercent) : "-"}</td>
                   <td>{seats}</td>
                 </tr>
@@ -1172,7 +1177,7 @@ function ChamberResult({
                           </td>
                           <td>{subjectNameById.get(listId) ?? listId}</td>
                           <td>{formatBigInt(votes)}</td>
-                          <td>{formatPercent(percentage(votes, national.totalValidVotes))}</td>
+                          <td>{formatPercent(percentage(votes, displayTotalValidVotes))}</td>
                           <td></td>
                         </tr>
                       );
@@ -1635,7 +1640,7 @@ function buildElectedSeats(
           partyId: elected.listId,
           partyName: subjectNameById.get(elected.listId) ?? elected.listId,
           chamber,
-          electedIn: elected.partitionId,
+          electedIn: formatForeignPartitionName(result, elected.partitionId),
           nominationType: "foreign",
           listPosition: elected.candidate.list_position,
           color: partyColor(elected.listId)
@@ -1655,7 +1660,7 @@ function buildConstituencyGroups(
   candidateById: Map<string, Candidate>,
   t: Translation
 ): Array<{ id: string; name: string; rows: ConstituencyCandidateRow[] }> {
-  if (!scenario?.nominations?.length) return [];
+  if (!scenario) return [];
 
   const constituencyNameById = new Map(scenario.constituencies.map((constituency) => [constituency.id, constituency.name]));
   const districtById = new Map(scenario.multiMemberDistricts.map((district) => [district.id, district]));
@@ -1663,7 +1668,7 @@ function buildConstituencyGroups(
   const traceByCandidateId = new Map(result.seatTrace.filter((trace) => trace.candidateId).map((trace) => [trace.candidateId as string, trace]));
   const groups = new Map<string, { id: string; name: string; rows: ConstituencyCandidateRow[] }>();
 
-  for (const nomination of scenario.nominations) {
+  for (const nomination of scenario.nominations ?? []) {
     if (nomination.nominationType === "bonus-constituency-list") continue;
     const district = nomination.districtId ? districtById.get(nomination.districtId) : undefined;
     const constituencyId = nomination.constituencyId ?? district?.constituencyId ?? `${nomination.chamber}-unknown`;
@@ -1705,6 +1710,51 @@ function buildConstituencyGroups(
     });
   }
 
+  for (const foreignChamber of ["camera", "senato"] as const) {
+    const chamber: Chamber = foreignChamber === "senato" ? "senate" : "camera";
+    const foreignResult = result.foreignResults[foreignChamber];
+    const electedKeys = new Set(
+      foreignResult?.electedCandidates.map((elected) =>
+        foreignCandidateKey(foreignChamber, elected.partitionId, elected.listId, elected.candidate)
+      ) ?? []
+    );
+    const electedByKey = new Map(
+      foreignResult?.electedCandidates.map((elected) => [
+        foreignCandidateKey(foreignChamber, elected.partitionId, elected.listId, elected.candidate),
+        elected
+      ]) ?? []
+    );
+
+    for (const partition of scenario.foreignElection.chambers[foreignChamber].partitions) {
+      const groupId = `${foreignChamber}-${partition.id}`;
+      const group = groups.get(groupId) ?? {
+        id: groupId,
+        name: `${formatChamber(chamber, t)} - ${t.foreignName}: ${partition.name}`,
+        rows: []
+      };
+      groups.set(groupId, group);
+
+      for (const list of partition.lists) {
+        for (const candidate of list.candidates) {
+          const key = foreignCandidateKey(foreignChamber, partition.id, list.id, candidate);
+          const elected = electedByKey.get(key);
+          group.rows.push({
+            key,
+            name: candidate.name,
+            chamber,
+            partyName: subjectNameById.get(list.id) ?? list.name,
+            partyId: list.id,
+            color: partyColor(list.id),
+            district: partition.name,
+            position: candidate.list_position,
+            elected: electedKeys.has(key),
+            reason: elected ? `Legge 459/2001 articolo 15; ${candidate.preferences.toLocaleString("it-IT")} preferenze` : t.notReachedReason
+          });
+        }
+      }
+    }
+  }
+
   return [...groups.values()]
     .map((group) => ({
       ...group,
@@ -1744,6 +1794,29 @@ function csvCell(value: string): string {
 
 function formatChamber(chamber: Chamber | "-", t?: Translation): string {
   return chamber === "camera" ? (t?.cameraName ?? "Camera") : chamber === "senate" ? (t?.senateName ?? "Senato") : "-";
+}
+
+function foreignCandidateKey(
+  chamber: "camera" | "senato",
+  partitionId: string,
+  listId: string,
+  candidate: { id?: string; name: string; list_position: number }
+): string {
+  return `${chamber}-${partitionId}-${listId}-${candidate.id ?? `${candidate.list_position}-${candidate.name}`}`;
+}
+
+function formatForeignPartitionName(result: ElectionSimulationResult, partitionId: string): string {
+  const names: Record<string, string> = {
+    EUROPA: "Europa",
+    AMERICA_MERIDIONALE: "America meridionale",
+    AMERICA_SETTENTRIONALE_CENTRALE: "America settentrionale e centrale",
+    AFRICA_ASIA_OCEANIA_ANTARTIDE: "Africa, Asia, Oceania e Antartide"
+  };
+  return Object.values(result.foreignResults).some((chamber) =>
+    chamber?.partitionResults.some((partition) => partition.partitionId === partitionId)
+  )
+    ? names[partitionId] ?? partitionId
+    : partitionId;
 }
 
 function totalAssignedSeats(result: ElectionSimulationResult): number {
