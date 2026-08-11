@@ -104,6 +104,7 @@ const translations = {
     noRows: "Nessuna riga disponibile.",
     notReachedReason: "non raggiunto dall'ordine di lista per i seggi assegnati",
     electedElsewhere: "proclamato in un altro collegio/circoscrizione",
+    foreignPreferencesMissing: "preferenze non disponibili nel file estero",
     names: "nomi",
     debugLog: "Debug log",
     steps: "step",
@@ -242,6 +243,7 @@ const translations = {
     noRows: "No rows available.",
     notReachedReason: "not reached by the list order for the allocated seats",
     electedElsewhere: "proclaimed in another district/constituency",
+    foreignPreferencesMissing: "preferences unavailable in the foreign file",
     names: "names",
     debugLog: "Debug log",
     steps: "steps",
@@ -1748,7 +1750,13 @@ function buildConstituencyGroups(
             district: partition.name,
             position: candidate.list_position,
             elected: electedKeys.has(key),
-            reason: elected ? `Legge 459/2001 articolo 15; ${candidate.preferences.toLocaleString("it-IT")} preferenze` : t.notReachedReason
+            reason: elected
+              ? `Legge 459/2001 articolo 15; ${
+                  candidate.preferences == null
+                    ? t.foreignPreferencesMissing
+                    : `${candidate.preferences.toLocaleString("it-IT")} preferenze`
+                }`
+              : t.notReachedReason
           });
         }
       }

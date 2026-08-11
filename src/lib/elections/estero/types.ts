@@ -9,7 +9,7 @@ export type ForeignPartitionId =
 export type ForeignCandidate = {
   id?: string;
   name: string;
-  preferences: number;
+  preferences?: number | null;
   list_position: number;
 };
 

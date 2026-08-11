@@ -25,7 +25,7 @@ const foreignChamberSchema = z.object({
             z.object({
               id: z.string().min(1).optional(),
               name: z.string().min(1),
-              preferences: z.number().int().nonnegative(),
+              preferences: z.number().int().nonnegative().nullable().optional(),
               list_position: z.number().int().positive()
             })
           )

@@ -18,7 +18,7 @@ type SourceManifest = Record<ChamberId, { partitions: SourcePartition[] }>;
 
 type OutputCandidate = {
   name: string;
-  preferences: number;
+  preferences: number | null;
   list_position: number;
 };
 
@@ -144,7 +144,7 @@ function normalizeCandidates(payload: unknown): Map<string, OutputCandidate[]> {
     const candidates = byList.get(listId) ?? [];
     candidates.push({
       name: fullName,
-      preferences: pickNumber(row, ["preferenze", "voti_pref", "voti", "preferences"]) ?? 0,
+      preferences: pickNumber(row, ["preferenze", "voti_pref", "voti", "preferences"]) ?? null,
       list_position: pickNumber(row, ["posizione", "num_ordine", "ordine", "list_position"]) ?? candidates.length + 1
     });
     byList.set(listId, candidates);
