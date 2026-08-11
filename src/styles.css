@@ -1,0 +1,945 @@
+:root {
+  --background: #f4f6f8;
+  --surface: #fff;
+  --surface-muted: #e9f3f6;
+  --text: #182025;
+  --muted: #60717d;
+  --border: #dce3e8;
+  --border-soft: #e4e9ed;
+  --border-softer: #eef2f4;
+  --primary: #23455c;
+  --primary-hover: #183344;
+  --primary-text: #fff;
+  --alert-background: #fff1f0;
+  --alert-border: #d86b61;
+  --alert-text: #8d2d25;
+  --warning-background: #fff8ea;
+  --warning-border: #d2a94d;
+  color: var(--text);
+  background: var(--background);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+[data-theme="dark"] {
+  --background: #11171b;
+  --surface: #182127;
+  --surface-muted: #20313a;
+  --text: #edf3f6;
+  --muted: #9bb0bc;
+  --border: #2b3b44;
+  --border-soft: #33454f;
+  --border-softer: #26343c;
+  --primary: #8fc7df;
+  --primary-hover: #b5dcec;
+  --primary-text: #102027;
+  --alert-background: #321d1d;
+  --alert-border: #a95b55;
+  --alert-text: #f2b9b5;
+  --warning-background: #2d2616;
+  --warning-border: #a78335;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  margin: 0;
+}
+
+button,
+.fileButton {
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  background: var(--primary);
+  color: var(--primary-text);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.7rem 0.9rem;
+}
+
+button:hover,
+.fileButton:hover {
+  background: var(--primary-hover);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--primary);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--surface-muted);
+}
+
+.fileButton input {
+  display: none;
+}
+
+.themeButton {
+  align-items: center;
+  display: inline-flex;
+  font-size: 1.15rem;
+  height: 2.9rem;
+  justify-content: center;
+  padding: 0;
+  width: 2.9rem;
+}
+
+.languageButton {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+.helpButton {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 800;
+  height: 2.9rem;
+  justify-content: center;
+  padding: 0;
+  width: 2.9rem;
+}
+
+.visuallyHidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.appShell {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 2rem;
+}
+
+.topbar {
+  margin-bottom: 1.5rem;
+}
+
+.topbarContent {
+  width: 100%;
+}
+
+.topbarHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.topbarControls {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.65rem;
+  justify-content: flex-end;
+}
+
+.topbarLead {
+  color: var(--muted);
+  margin: 0.45rem 0 0;
+  max-width: 72rem;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.primaryActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.alert {
+  background: var(--alert-background);
+  border: 1px solid var(--alert-border);
+  border-radius: 6px;
+  color: var(--alert-text);
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+}
+
+.loadingBanner {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--primary);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+}
+
+.noticeBanner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+}
+
+.dialogBackdrop {
+  align-items: flex-start;
+  background: rgba(5, 12, 16, 0.5);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 2rem 1rem;
+  position: fixed;
+  z-index: 20;
+}
+
+.helpDialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 4rem);
+  max-width: 920px;
+  padding: 1.1rem;
+  width: min(100%, 920px);
+}
+
+.helpDialogHeader {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.helpDialogHeader h2 {
+  font-size: 1.25rem;
+}
+
+.helpDialog p {
+  color: var(--muted);
+  margin: 0.7rem 0 0;
+}
+
+.helpCloseButton {
+  flex: 0 0 auto;
+  font-size: 1.35rem;
+  height: 2.5rem;
+  line-height: 1;
+  padding: 0;
+  width: 2.5rem;
+}
+
+.helpList {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.helpList div {
+  border-top: 1px solid var(--border-soft);
+  padding-top: 0.75rem;
+}
+
+.helpList dt {
+  font-weight: 800;
+}
+
+.helpList dd {
+  color: var(--muted);
+  margin: 0.25rem 0 0;
+}
+
+.panel,
+.emptyState {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.panel,
+.emptyState {
+  padding: 1.1rem;
+}
+
+.resultCards {
+  display: grid;
+  gap: 1rem;
+}
+
+.resultCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.resultCard summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 1rem 1.1rem;
+}
+
+.resultCard summary::-webkit-details-marker {
+  display: none;
+}
+
+.resultCard summary::after {
+  color: var(--muted);
+  content: "⌄";
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.resultCard[open] summary::after {
+  content: "⌃";
+}
+
+.resultCard summary span {
+  font-size: 1.12rem;
+  font-weight: 800;
+}
+
+.resultCard summary small {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.resultCardBody {
+  border-top: 1px solid var(--border-soft);
+  padding: 1.1rem;
+}
+
+.emptyState {
+  min-height: 220px;
+}
+
+.emptyState p {
+  color: var(--muted);
+}
+
+.chamberBlock {
+  margin-top: 1rem;
+}
+
+.sectionHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.sectionHeader p {
+  color: var(--muted);
+  margin: 0.35rem 0 0;
+}
+
+.sectionHeader span {
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.parliamentBlock {
+  margin: 1rem 0 1.25rem;
+}
+
+.parliamentInspectorBlock {
+  margin: 0;
+}
+
+.parliamentGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.parliamentLayout {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.parliamentArc {
+  background: var(--surface-muted);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  min-height: 300px;
+  width: 100%;
+}
+
+.missingSeatsNote {
+  margin: 0.75rem 0 0;
+}
+
+.seatDot {
+  cursor: pointer;
+  outline: none;
+  stroke: rgba(255, 255, 255, 0.7);
+  stroke-width: 0.22;
+}
+
+.seatDot:hover,
+.seatDot:focus,
+.seatDot.active {
+  stroke: var(--text);
+  stroke-width: 0.75;
+}
+
+.parliamentLegend {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  grid-column: 1 / -1;
+  padding: 0.9rem;
+}
+
+.parliamentLegend h3 {
+  font-size: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.parliamentLegend ul {
+  display: grid;
+  column-gap: 2rem;
+  row-gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.parliamentLegend li {
+  align-items: start;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.parliamentLegend .partySwatch {
+  margin-top: 0.2rem;
+}
+
+.parliamentLegendName {
+  overflow-wrap: anywhere;
+}
+
+.parliamentLegendSeats {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.seatInspector {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.seatInspector h3 {
+  font-size: 1.1rem;
+  margin: 0.5rem 0 0.85rem;
+}
+
+.seatInspector dl {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.seatInspector dl div {
+  border-top: 1px solid var(--border-softer);
+  padding-top: 0.55rem;
+}
+
+.seatInspector dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.seatInspector dd {
+  margin: 0.15rem 0 0;
+}
+
+.chamberHeader {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.chamberHeader span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border-soft);
+  padding: 0.62rem 0.35rem;
+  text-align: right;
+}
+
+.tableScroller {
+  overflow-x: auto;
+}
+
+.tableFilters {
+  align-items: end;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  margin-bottom: 0.75rem;
+}
+
+.tableFilter {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.tableFilter span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.tableFilter input,
+.tableFilter select {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+}
+
+.nationalResultsTable {
+  min-width: 720px;
+  table-layout: fixed;
+}
+
+.tableDotColumn {
+  width: 2.4rem;
+}
+
+.nationalSubjectColumn {
+  width: 55%;
+}
+
+.nationalVotesColumn {
+  width: 10rem;
+}
+
+.nationalPercentColumn {
+  width: 7rem;
+}
+
+.nationalSeatsColumn {
+  width: 6rem;
+}
+
+.debugStepColumn {
+  width: 12rem;
+}
+
+.debugChamberColumn {
+  width: 8rem;
+}
+
+.debugDetailColumn {
+  width: 44rem;
+}
+
+.nationalResultsTable td:nth-child(2),
+.nationalResultsTable th:nth-child(2) {
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.nationalResultsTable td:nth-child(3),
+.nationalResultsTable td:nth-child(4),
+.nationalResultsTable td:nth-child(5),
+.nationalResultsTable th:nth-child(3),
+.nationalResultsTable th:nth-child(4),
+.nationalResultsTable th:nth-child(5) {
+  white-space: nowrap;
+}
+
+.partyCell {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+.rowToggleButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  display: inline-flex;
+  gap: 0.45rem;
+  max-width: 100%;
+  padding: 0;
+  text-align: left;
+}
+
+.rowToggleButton span:last-child {
+  overflow-wrap: anywhere;
+}
+
+.rowToggleButton:hover {
+  background: transparent;
+  color: var(--primary);
+}
+
+.rowToggleIcon {
+  color: var(--muted);
+  display: inline-block;
+  flex: 0 0 auto;
+  font-size: 1rem;
+  line-height: 1;
+  width: 1rem;
+}
+
+.coalitionPartyRow td {
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.coalitionPartyRow td:nth-child(2) {
+  padding-left: 1.8rem;
+}
+
+.partySwatch {
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+.colorColumn {
+  text-align: center;
+  width: 2rem;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
+th.colorColumn,
+td.colorColumn {
+  text-align: center;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.candidateReport {
+  margin-top: 0;
+}
+
+.candidateReport h2 {
+  margin-bottom: 0;
+}
+
+.candidateReportHeader {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.debugLog {
+  overflow-x: auto;
+}
+
+.debugLog th,
+.debugLog td {
+  white-space: nowrap;
+}
+
+.debugLog td:last-child {
+  min-width: 44rem;
+  white-space: normal;
+}
+
+.paginationControls {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-top: 0.8rem;
+}
+
+.paginationControls div {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.paginationControls button {
+  padding: 0.45rem 0.65rem;
+}
+
+.paginationControls span {
+  font-size: 0.9rem;
+}
+
+.candidateReport details {
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+  padding: 0.75rem;
+}
+
+.candidateReport summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.candidateReport summary span {
+  color: var(--muted);
+  font-weight: 500;
+  margin-left: 0.4rem;
+}
+
+.candidateList {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.candidateList li {
+  border-top: 1px solid var(--border-softer);
+  display: grid;
+  gap: 0.2rem;
+  padding-top: 0.5rem;
+}
+
+.candidateList span,
+.muted {
+  color: var(--muted);
+}
+
+.unresolvedBox {
+  background: var(--warning-background);
+  border: 1px solid var(--warning-border);
+  border-radius: 6px;
+  margin-top: 1rem;
+  padding: 0.85rem;
+}
+
+.unresolvedBox h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.unresolvedBox ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.bonusReport {
+  display: grid;
+  gap: 1rem;
+}
+
+.bonusSummary {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.bonusSummary div {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.bonusSummary dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.bonusSummary dd {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.subsectionTitle {
+  font-size: 1rem;
+  margin-top: 0.2rem;
+}
+
+.constituencyReport {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.constituencyBlock {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.constituencyBlock summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 0.85rem;
+}
+
+.constituencyBlock summary::-webkit-details-marker {
+  display: none;
+}
+
+.constituencyBlock summary span {
+  font-weight: 800;
+}
+
+.constituencyBlock summary small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.candidateOutcomeGroup {
+  border-top: 1px solid var(--border-soft);
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+}
+
+.candidateOutcomeGroup h3 {
+  font-size: 1rem;
+}
+
+@media (max-width: 840px) {
+  .appShell {
+    padding: 1rem;
+  }
+
+  .chamberHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .primaryActions {
+    flex: 1 1 100%;
+  }
+
+  .topbarHeader {
+    flex-wrap: wrap;
+  }
+
+  .topbarControls {
+    margin-left: auto;
+  }
+
+  .parliamentLayout,
+  .parliamentGrid,
+  .sectionHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    display: block;
+  }
+
+  .sectionHeader span {
+    display: block;
+    margin-top: 0.4rem;
+  }
+
+  .bonusSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .parliamentArc {
+    min-height: 210px;
+  }
+
+  .parliamentLegend ul {
+    grid-template-columns: 1fr;
+  }
+
+  .dialogBackdrop {
+    padding: 1rem;
+  }
+
+  .helpDialog {
+    max-height: calc(100vh - 2rem);
+  }
+}

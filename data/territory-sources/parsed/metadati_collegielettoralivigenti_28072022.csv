@@ -1,0 +1,9 @@
+"METADATI COLLEGI ELETTORALI VIGENTI (decreto legislativo 23 dicembre 2020, n. 177) ",,
+7 shape file (.shp),Contenuto,
+1,UT_Collegi2020,"Basi geografiche delle unità territoriali che formano i collegi elettorali (comuni e aree sub-comunali, limitatamente ai comuni di Torino, Genova, Milano, Roma, Napoli e Palermo con territorio ripsrtito su più di un collegio). Geografia comunale vigente alla data della pubblicazione"
+2,CAMERA_CollegiUNINOMINALI_2020,Basi geografiche dei collegi elettorali uninominali - Camera dei deputati
+3,CAMERA_CollegiPLURINOMINALI_2020,Basi geografiche dei collegi elettorali plurinominali - Camera dei deputati
+4,SENATO_CollegiUNINOMINALI_2020,Basi geografiche dei collegi elettorali uninominali - Senato della Repubblica
+5,SENATO_CollegiPLURINOMINALI_2020,Basi geografiche dei collegi elettorali plurinominali - Senato della Repubblica
+6,CIRCOSCRIZIONI_CAMERA,Basi geografiche delle circoscrizioni elettorali - Camera dei deputati
+7,REGIONI_SENATO,Basi geografiche delle circoscrizioni elettorali - Senato della Repubblica

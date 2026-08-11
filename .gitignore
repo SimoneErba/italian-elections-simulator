@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.DS_Store
+npm-debug.log*
+
+# Large upstream source artifacts. Keep normalized CSV/JSON inputs in Git; fetch
+# these originals from the URLs recorded in the adjacent MANIFEST files when
+# re-deriving data.
+data/**/*.zip
+data/**/*.pdf
+data/camera-2022-Italia-livcomune.csv
+data/senato-2022-italia-livcomune.csv
+data/legal-sources/AC0469_vol1.htm
