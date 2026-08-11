@@ -45,6 +45,35 @@ Runtime data lives under `data/input`, `data/population`,
 tracked in Git; their source URLs and checksums are recorded in the adjacent
 `data/**/sources/MANIFEST.md` files.
 
+### Preparing input data
+
+The simulator expects the normalized demo inputs to be present before running
+tests or building the app. Prepare them with this layout:
+
+```text
+data/input/Politiche2022_Scrutini_Camera_Italia.csv
+data/input/Politiche2022_Scrutini_Senato_Italia.csv
+data/input/camera-2022-candidatilista.csv
+data/input/senato-2022-candlista.csv
+data/input/bonus-candidates-2022-random.csv
+data/input/estero.json
+data/population/electoral-2021.csv
+data/geography/camera-constituencies.csv
+public/data/elections/2022/estero.json
+```
+
+Use comma-separated vote files for Camera and Senato with municipality,
+district, list, coalition-candidate, and `VOTI LISTE` columns. Use
+semicolon-separated candidate-list files with ordered candidates by chamber,
+list, and plurinominal district. The bonus candidate CSV provides the ordered
+candidate pool used when the governability bonus is awarded. `estero.json`
+contains the foreign constituency partitions, list votes, and candidate
+preferences used by the client.
+
+Keep bulky upstream archives outside Git and record their source URL and
+checksum in the relevant `data/**/sources/MANIFEST.md`. See
+`data/README.md` for the full column-level import contract and source notes.
+
 ## GitHub Pages
 
 The workflow in `.github/workflows/pages.yml` runs on every push to `main`.
