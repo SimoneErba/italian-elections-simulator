@@ -1,0 +1,625 @@
+{
+  "election": "politiche-2022",
+  "date": "2022-09-25",
+  "chambers": {
+    "camera": {
+      "total_seats": 8,
+      "partitions": [
+        {
+          "id": "EUROPA",
+          "name": "Europa",
+          "seats": 3,
+          "resident_citizens": 3189905,
+          "lists": [
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO - ITALIA DEMOCRATICA E PROGRESSISTA",
+              "votes": 177856,
+              "candidates": [
+                {
+                  "name": "Ricciardi Toni",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "CDX",
+              "name": "LEGA PER SALVINI PREMIER - FORZA ITALIA - FRATELLI D'ITALIA",
+              "votes": 161029,
+              "candidates": [
+                {
+                  "name": "Billi Simone",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 65659,
+              "candidates": [
+                {
+                  "name": "Onori Federica",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "AVS",
+              "name": "ALLEANZA VERDI E SINISTRA",
+              "votes": 52994,
+              "candidates": []
+            },
+            {
+              "id": "AZIONE_ITALIA_VIVA",
+              "name": "AZIONE - ITALIA VIVA - CALENDA",
+              "votes": 50182,
+              "candidates": []
+            },
+            {
+              "id": "PIU_EUROPA",
+              "name": "+EUROPA",
+              "votes": 29971,
+              "candidates": []
+            },
+            {
+              "id": "MOVIMENTO_LIBERTA",
+              "name": "MOVIMENTO DELLE LIBERTA'",
+              "votes": 18212,
+              "candidates": []
+            },
+            {
+              "id": "IMPEGNO_CIVICO",
+              "name": "IMPEGNO CIVICO LUIGI DI MAIO - CENTRO DEMOCRATICO",
+              "votes": 11590,
+              "candidates": []
+            }
+          ]
+        },
+        {
+          "id": "AMERICA_MERIDIONALE",
+          "name": "America Meridionale",
+          "seats": 2,
+          "resident_citizens": 1804291,
+          "lists": [
+            {
+              "id": "MAIE",
+              "name": "MOVIMENTO ASSOCIATIVO ITALIANI ALL'ESTERO - MAIE",
+              "votes": 134123,
+              "candidates": [
+                {
+                  "name": "Tirelli Franco",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO - ITALIA DEMOCRATICA E PROGRESSISTA",
+              "votes": 80626,
+              "candidates": [
+                {
+                  "name": "Porta Fabio",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "CDX",
+              "name": "LEGA PER SALVINI PREMIER - FORZA ITALIA - FRATELLI D'ITALIA",
+              "votes": 79414,
+              "candidates": []
+            },
+            {
+              "id": "USEI",
+              "name": "UNIONE SUDAMERICANA EMIGRATI ITALIANI - USEI",
+              "votes": 73241,
+              "candidates": []
+            },
+            {
+              "id": "ITALIA_MERIDIONE",
+              "name": "L'ITALIA DEL MERIDIONE",
+              "votes": 15394,
+              "candidates": []
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 14358,
+              "candidates": []
+            }
+          ]
+        },
+        {
+          "id": "AMERICA_SETTENTRIONALE_CENTRALE",
+          "name": "America Settentrionale e Centrale",
+          "seats": 2,
+          "resident_citizens": 505567,
+          "lists": [
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO - ITALIA DEMOCRATICA E PROGRESSISTA",
+              "votes": 28280,
+              "candidates": [
+                {
+                  "name": "Di Sanzo Christian Diego",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "CDX",
+              "name": "LEGA PER SALVINI PREMIER - FORZA ITALIA - FRATELLI D'ITALIA",
+              "votes": 26943,
+              "candidates": [
+                {
+                  "name": "Di Giuseppe Andrea",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "MAIE",
+              "name": "MOVIMENTO ASSOCIATIVO ITALIANI ALL'ESTERO - MAIE",
+              "votes": 7233,
+              "candidates": []
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 5885,
+              "candidates": []
+            },
+            {
+              "id": "AZIONE_ITALIA_VIVA",
+              "name": "AZIONE - ITALIA VIVA - CALENDA",
+              "votes": 5510,
+              "candidates": []
+            }
+          ]
+        },
+        {
+          "id": "AFRICA_ASIA_OCEANIA_ANTARTIDE",
+          "name": "Africa, Asia, Oceania e Antartide",
+          "seats": 1,
+          "resident_citizens": 306305,
+          "lists": [
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO - ITALIA DEMOCRATICA E PROGRESSISTA",
+              "votes": 18997,
+              "candidates": [
+                {
+                  "name": "Carè Nicola",
+                  "preferences": 0,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "CDX",
+              "name": "LEGA PER SALVINI PREMIER - FORZA ITALIA - FRATELLI D'ITALIA",
+              "votes": 14563,
+              "candidates": []
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 7436,
+              "candidates": []
+            },
+            {
+              "id": "AZIONE_ITALIA_VIVA",
+              "name": "AZIONE - ITALIA VIVA - CALENDA",
+              "votes": 4807,
+              "candidates": []
+            }
+          ]
+        }
+      ]
+    },
+    "senato": {
+      "total_seats": 4,
+      "partitions": [
+        {
+          "id": "EUROPA",
+          "name": "Europa",
+          "seats": 1,
+          "resident_citizens": 3189905,
+          "lists": [
+            {
+              "id": "AZIONE_ITALIA_VIVA",
+              "name": "AZIONE - ITALIA VIVA - CALENDA",
+              "votes": 55776,
+              "candidates": [
+                {
+                  "name": "Renzetti Angelo",
+                  "preferences": 7962,
+                  "list_position": 1
+                },
+                {
+                  "name": "Tipu Golam Maula",
+                  "preferences": 6947,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "MOVIMENTO_LIBERTA",
+              "name": "MOVIMENTO DELLE LIBERTA'",
+              "votes": 23378,
+              "candidates": [
+                {
+                  "name": "Barone Ester",
+                  "preferences": 4961,
+                  "list_position": 1
+                },
+                {
+                  "name": "Agostini Alessandra",
+                  "preferences": 3375,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 72935,
+              "candidates": [
+                {
+                  "name": "Balbi Stefano",
+                  "preferences": 11804,
+                  "list_position": 1
+                },
+                {
+                  "name": "Bardin Andrea",
+                  "preferences": 6545,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "CDX",
+              "name": "LEGA - FORZA ITALIA- FRATELLI D'ITALIA",
+              "votes": 162131,
+              "candidates": [
+                {
+                  "name": "Bille' Luigi",
+                  "preferences": 18289,
+                  "list_position": 1
+                },
+                {
+                  "name": "Zehentner Alessandro",
+                  "preferences": 14468,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO",
+              "votes": 235747,
+              "candidates": [
+                {
+                  "name": "Crisanti Andrea",
+                  "preferences": 36050,
+                  "list_position": 1
+                },
+                {
+                  "name": "Schiavone Michele",
+                  "preferences": 27400,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "IMPEGNO_CIVICO",
+              "name": "IMPEGNO CIVICO",
+              "votes": 14604,
+              "candidates": [
+                {
+                  "name": "Calandra Americo",
+                  "preferences": 2989,
+                  "list_position": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "AMERICA_MERIDIONALE",
+          "name": "America Meridionale",
+          "seats": 1,
+          "resident_citizens": 1804291,
+          "lists": [
+            {
+              "id": "AZIONE_ITALIA_VIVA",
+              "name": "AZIONE - ITALIA VIVA - CALENDA",
+              "votes": 10168,
+              "candidates": [
+                {
+                  "name": "Di Martino Vincenzo",
+                  "preferences": 3091,
+                  "list_position": 1
+                },
+                {
+                  "name": "Roland Zovico Marcelo Luis",
+                  "preferences": 1955,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "CDX",
+              "name": "LEGA - FORZA ITALIA- FRATELLI D'ITALIA",
+              "votes": 91836,
+              "candidates": [
+                {
+                  "name": "Fittipaldi Emerson",
+                  "preferences": 37352,
+                  "list_position": 1
+                },
+                {
+                  "name": "Bomrad Marcelo David",
+                  "preferences": 14699,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "USEI",
+              "name": "USEI",
+              "votes": 55456,
+              "candidates": [
+                {
+                  "name": "Palmiotti Jose' Francisco",
+                  "preferences": 20606,
+                  "list_position": 1
+                },
+                {
+                  "name": "Miguel Rodrigo Sebastian",
+                  "preferences": 7250,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "MAIE",
+              "name": "MOV.ASSOCIATIVO ITALIANI",
+              "votes": 131161,
+              "candidates": [
+                {
+                  "name": "Borghese Mario Alejandro",
+                  "preferences": 58458,
+                  "list_position": 1
+                },
+                {
+                  "name": "Laspro Luciana",
+                  "preferences": 20941,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO",
+              "votes": 85993,
+              "candidates": [
+                {
+                  "name": "Matarazzo Angelo Andrea",
+                  "preferences": 30709,
+                  "list_position": 1
+                },
+                {
+                  "name": "Sebastiani Mario Aldo",
+                  "preferences": 18184,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "ITALIA_MERIDIONE",
+              "name": "ITALIA MERIDIONE",
+              "votes": 14173,
+              "candidates": [
+                {
+                  "name": "Bianco Emilio Julio",
+                  "preferences": 3712,
+                  "list_position": 1
+                },
+                {
+                  "name": "Rossino Angela",
+                  "preferences": 2717,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 15661,
+              "candidates": [
+                {
+                  "name": "Mainenti Ivana",
+                  "preferences": 4770,
+                  "list_position": 1
+                },
+                {
+                  "name": "Garruti Vincenzo",
+                  "preferences": 1457,
+                  "list_position": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "AMERICA_SETTENTRIONALE_CENTRALE",
+          "name": "America Settentrionale e Centrale",
+          "seats": 1,
+          "resident_citizens": 505567,
+          "lists": [
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO",
+              "votes": 30066,
+              "candidates": [
+                {
+                  "name": "La Marca Francesca",
+                  "preferences": 10017,
+                  "list_position": 1
+                },
+                {
+                  "name": "Nestico' Pasquale Francesco",
+                  "preferences": 4389,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 6021,
+              "candidates": [
+                {
+                  "name": "Fumagalli Anna",
+                  "preferences": 1398,
+                  "list_position": 1
+                },
+                {
+                  "name": "Baglione Virginia",
+                  "preferences": 662,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "MAIE",
+              "name": "MOV.ASSOCIATIVO ITALIANI",
+              "votes": 6978,
+              "candidates": [
+                {
+                  "name": "Odoguardi Vincenzo",
+                  "preferences": 3090,
+                  "list_position": 1
+                },
+                {
+                  "name": "Vespa Antonio",
+                  "preferences": 597,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "AZIONE_ITALIA_VIVA",
+              "name": "AZIONE - ITALIA VIVA - CALENDA",
+              "votes": 5342,
+              "candidates": [
+                {
+                  "name": "Severi Bruni Daniele",
+                  "preferences": 1404,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "CDX",
+              "name": "LEGA - FORZA ITALIA- FRATELLI D'ITALIA",
+              "votes": 26001,
+              "candidates": [
+                {
+                  "name": "Arcobelli Vincenzo",
+                  "preferences": 8347,
+                  "list_position": 1
+                },
+                {
+                  "name": "Olivieri Isabella Linda",
+                  "preferences": 2130,
+                  "list_position": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "AFRICA_ASIA_OCEANIA_ANTARTIDE",
+          "name": "Africa, Asia, Oceania e Antartide",
+          "seats": 1,
+          "resident_citizens": 306305,
+          "lists": [
+            {
+              "id": "CDX",
+              "name": "LEGA - FORZA ITALIA- FRATELLI D'ITALIA",
+              "votes": 15172,
+              "candidates": [
+                {
+                  "name": "Grigoletti Michele",
+                  "preferences": 1935,
+                  "list_position": 1
+                },
+                {
+                  "name": "Nan Enrico",
+                  "preferences": 1220,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "AZIONE_ITALIA_VIVA",
+              "name": "AZIONE - ITALIA VIVA - CALENDA",
+              "votes": 4788,
+              "candidates": [
+                {
+                  "name": "Berchi Federico",
+                  "preferences": 870,
+                  "list_position": 1
+                }
+              ]
+            },
+            {
+              "id": "PD_IDP",
+              "name": "PARTITO DEMOCRATICO",
+              "votes": 18764,
+              "candidates": [
+                {
+                  "name": "Giacobbe Francesco",
+                  "preferences": 4141,
+                  "list_position": 1
+                },
+                {
+                  "name": "Fratini Sandro",
+                  "preferences": 1779,
+                  "list_position": 2
+                }
+              ]
+            },
+            {
+              "id": "M5S",
+              "name": "MOVIMENTO 5 STELLE",
+              "votes": 7240,
+              "candidates": [
+                {
+                  "name": "Cola Lorenzo",
+                  "preferences": 1080,
+                  "list_position": 1
+                },
+                {
+                  "name": "Altrocchi Clorinda",
+                  "preferences": 683,
+                  "list_position": 2
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
