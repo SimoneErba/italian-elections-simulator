@@ -1,6 +1,7 @@
 import type { Chamber } from "../domain/chamber";
 import type { BonusDecision, ElectionInput, NationalResult, TerritorialSeatResult } from "../domain/election";
 import type { TieResolutionRequired } from "../domain/trace";
+import { compareFractions, fraction, percentage } from "../arithmetic/fraction";
 import { allocateByHare, compensateToTargets } from "./proportional-allocation";
 import { specialTerritoryForMultiMemberDistrict } from "./special-territories";
 
@@ -175,7 +176,7 @@ function votesByTerritory(
     if (!district || specialTerritoryForMultiMemberDistrict(district)) continue;
     const territoryId = district[key];
     if (!territoryId) continue;
-    const subjectId = subjectForList(input, vote.listId, subjects);
+    const subjectId = subjectForList(input, chamber, vote.listId, subjects);
     if (!subjectId) continue;
     result[territoryId] = result[territoryId] ?? {};
     result[territoryId][subjectId] = (result[territoryId][subjectId] ?? 0n) + vote.votes;
@@ -183,11 +184,13 @@ function votesByTerritory(
   return result;
 }
 
-function subjectForList(input: ElectionInput, listId: string, subjects: string[]): string | undefined {
+function subjectForList(input: ElectionInput, chamber: Chamber, listId: string, subjects: string[]): string | undefined {
   const subjectSet = new Set(subjects);
   if (subjectSet.has(listId)) return listId;
   const list = input.lists.find((item) => item.id === listId);
-  return list?.coalitionId && subjectSet.has(list.coalitionId) ? list.coalitionId : undefined;
+  return list?.coalitionId && subjectSet.has(list.coalitionId) && listCountsForCoalition(input, chamber, listId)
+    ? list.coalitionId
+    : undefined;
 }
 
 function listIdsForSubject(input: ElectionInput, subjectId: string): Set<string> {
@@ -329,4 +332,16 @@ function districtSubjectVotes(input: ElectionInput, chamber: Chamber, districtId
   return input.listVotes
     .filter((vote) => vote.chamber === chamber && vote.districtId === districtId && lists.has(vote.listId))
     .reduce((sum, vote) => sum + vote.votes, 0n);
+}
+
+function listCountsForCoalition(input: ElectionInput, chamber: Chamber, listId: string): boolean {
+  const list = input.lists.find((item) => item.id === listId);
+  if (list?.isLinguisticMinority) return true;
+  const votes = input.listVotes
+    .filter((vote) => vote.chamber === chamber && vote.listId === listId)
+    .reduce((sum, vote) => sum + vote.votes, 0n);
+  const total = input.listVotes
+    .filter((vote) => vote.chamber === chamber)
+    .reduce((sum, vote) => sum + vote.votes, 0n);
+  return compareFractions(percentage(votes, total), fraction(1n)) >= 0;
 }

@@ -2,7 +2,8 @@ import { fraction, type Fraction } from "./fraction";
 
 export function hareQuotient(totalVotes: bigint, seats: number): Fraction {
   if (seats <= 0) throw new Error("Seat count must be positive");
-  return fraction(totalVotes, BigInt(seats));
+  const integerQuotient = totalVotes / BigInt(seats);
+  return fraction(integerQuotient > 0n ? integerQuotient : 1n);
 }
 
 export function integerSeatsByQuotient(votes: bigint, quotient: Fraction): number {

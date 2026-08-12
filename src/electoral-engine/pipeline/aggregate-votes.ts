@@ -2,6 +2,7 @@ import type { Chamber } from "../domain/chamber";
 import type { ElectionInput } from "../domain/election";
 import { chambers } from "../domain/chamber";
 import { specialTerritoryForMultiMemberDistrict } from "./special-territories";
+import { compareFractions, fraction, percentage } from "../arithmetic/fraction";
 
 export type ChamberVoteTotals = {
   chamber: Chamber;
@@ -41,14 +42,17 @@ export function aggregateVotes(
     chamberTotals.listVotes[vote.listId] = (chamberTotals.listVotes[vote.listId] ?? 0n) + vote.votes;
 
     const list = listsById.get(vote.listId);
-    if (list?.coalitionId) {
-      chamberTotals.coalitionVotes[list.coalitionId] = (chamberTotals.coalitionVotes[list.coalitionId] ?? 0n) + vote.votes;
-    }
+    if (list?.coalitionId) chamberTotals.coalitionVotes[list.coalitionId] = chamberTotals.coalitionVotes[list.coalitionId] ?? 0n;
   }
 
   for (const chamber of chambers) {
     const totals = result[chamber];
     const coalitionListIds = new Set(input.coalitions.flatMap((coalition) => coalition.listIds));
+    for (const coalition of input.coalitions) {
+      totals.coalitionVotes[coalition.id] = coalition.listIds
+        .filter((listId) => listCountsForCoalition(input, listId, totals.listVotes[listId] ?? 0n, totals.totalValidVotes))
+        .reduce((sum, listId) => sum + (totals.listVotes[listId] ?? 0n), 0n);
+    }
     totals.subjectVotes = { ...totals.coalitionVotes };
     for (const [listId, votes] of Object.entries(totals.listVotes)) {
       if (!coalitionListIds.has(listId)) {
@@ -58,4 +62,10 @@ export function aggregateVotes(
   }
 
   return result;
+}
+
+function listCountsForCoalition(input: ElectionInput, listId: string, votes: bigint, totalValidVotes: bigint): boolean {
+  const list = input.lists.find((item) => item.id === listId);
+  if (list?.isLinguisticMinority) return true;
+  return compareFractions(percentage(votes, totalValidVotes), fraction(1n)) >= 0;
 }

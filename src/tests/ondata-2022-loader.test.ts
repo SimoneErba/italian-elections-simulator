@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import type { Chamber } from "../electoral-engine/domain/chamber";
 import { loadBonusCandidateListsCsv, loadOnData2022Scenario as loadOnData2022ScenarioRaw, type OnDataImportFiles } from "../datasets/loaders/ondata-2022-loader";
 import { simulateElection } from "../electoral-engine/pipeline/simulate-election";
 import { defaultForeignElection2022 } from "../lib/elections/estero";
@@ -31,6 +32,24 @@ function loadOnData2022Scenario(files: Omit<OnDataImportFiles, "foreignElectionJ
 }
 
 describe("OnData 2022 loader", () => {
+  it("keeps a complete 600-member elected reference for the 2022 Parliament", () => {
+    const reference = readFullReference();
+
+    expect(reference.elected).toHaveLength(600);
+    expect(reference.totals).toEqual({
+      "camera.foreign": 8,
+      "camera.plurinominal": 245,
+      "camera.single-member": 147,
+      "senate.foreign": 4,
+      "senate.plurinominal": 122,
+      "senate.single-member": 74
+    });
+    expect(new Set(reference.elected.map((candidate) => candidate.candidateId)).size).toBe(600);
+    expect(reference.elected.filter((candidate) => candidate.sourceCoverage === "integrated-foreign-constituency")).toHaveLength(12);
+    expect(reference.elected.filter((candidate) => candidate.sourceCoverage === "integrated-special-territory")).toHaveLength(8);
+    expect(reference.elected.filter((candidate) => candidate.sourceCoverage === "integrated-cassation-recovery")).toHaveLength(1);
+  });
+
   it("infers coalitions from lists supporting the same uninominal candidate", () => {
     const scenario = loadOnData2022Scenario({ cameraScrutiniCsv: cameraCsv, senateScrutiniCsv: senateCsv });
 
@@ -57,7 +76,7 @@ describe("OnData 2022 loader", () => {
       chamber: "camera",
       districtId: "camera-abruzzo-p01",
       listId: "europa",
-      votes: 30n
+      votes: 31n
     });
     expect(scenario.listVotes).toContainEqual({
       chamber: "senate",
@@ -75,7 +94,7 @@ describe("OnData 2022 loader", () => {
 camera,camera-abruzzo,coalition-forza-italia-fratelli-d-italia-con-giorgia-meloni-lega-per-salvini-premier,fratelli-d-italia-con-giorgia-meloni,candidate-1,1,bonus-constituency-list`
     });
 
-    expect(scenario.nominations).toEqual([
+    expect(scenario.nominations).toContainEqual(
       {
         candidateId: "candidate-1",
         chamber: "camera",
@@ -85,7 +104,16 @@ camera,camera-abruzzo,coalition-forza-italia-fratelli-d-italia-con-giorgia-melon
         position: 1,
         nominationType: "bonus-constituency-list"
       }
-    ]);
+    );
+    expect(scenario.nominations).toContainEqual(
+      expect.objectContaining({
+        chamber: "camera",
+        candidateId: "camera-abruzzo-u01-chieti-bagnai-alberto",
+        districtId: "camera-abruzzo-u01-chieti",
+        position: 1,
+        nominationType: "single-member"
+      })
+    );
   });
 
   it("imports bonus candidate priority rows by winning subject", () => {
@@ -141,7 +169,11 @@ camera,coalition-a,candidate-b,3,Rossi,Maria`);
 25/9/2022 00:00:00;"C";"ABRUZZO";"ABRUZZO - P01";"MOVIMENTO 5 STELLE";"ROSSI";"MARIA";1/1/1980 00:00:00;"CHIETI";"F";"N"`
     });
 
-    expect(scenario.candidates).toHaveLength(2);
+    expect(
+      scenario.nominations?.filter(
+        (nomination) => nomination.listId === "movimento-5-stelle" && nomination.nominationType === "multi-member"
+      )
+    ).toHaveLength(2);
     expect(scenario.nominations).toContainEqual(
       expect.objectContaining({
         chamber: "camera",
@@ -162,15 +194,15 @@ camera,coalition-a,candidate-b,3,Rossi,Maria`);
       scenario.multiMemberDistricts
         .filter((district) => district.chamber === "camera")
         .reduce((sum, district) => sum + district.seatsWithoutBonus, 0)
-    ).toBe(8);
+    ).toBe(6);
     expect(
       scenario.multiMemberDistricts
         .filter((district) => district.chamber === "senate")
         .reduce((sum, district) => sum + district.seatsWithoutBonus, 0)
-    ).toBe(4);
+    ).toBe(3);
   });
 
-  it("simulates the bundled OnData folder import without zero-seat allocation errors", () => {
+  it("simulates the bundled OnData folder import with the Rosatellum 2022 engine", () => {
     const scenario = loadOnData2022Scenario({
       cameraScrutiniCsv: readFixture("Politiche2022_Scrutini_Camera_Italia.csv"),
       senateScrutiniCsv: readFixture("Politiche2022_Scrutini_Senato_Italia.csv"),
@@ -182,16 +214,77 @@ camera,coalition-a,candidate-b,3,Rossi,Maria`);
 
     const result = simulateElection(scenario);
 
+    expect(scenario.lawVersion).toBe("rosatellum-2022");
     expect(result.nationalResults.camera).toBeDefined();
     expect(result.nationalResults.senate).toBeDefined();
+    expect(result.bonus.awarded).toBe(false);
+    expect(result.bonus.failedConditions).toContain("La legge elettorale non prevede un premio di governabilita.");
     expect(result.trace.some((entry) => entry.level === "blocking")).toBe(false);
     expect(result.foreignResults.camera?.partitionResults).toHaveLength(4);
     expect(result.foreignResults.senato?.partitionResults).toHaveLength(4);
-    expect(result.electedCandidates).toHaveLength(572);
-    expect(result.ties.filter((tie) => tie.stage.includes("proclamazione candidati"))).toHaveLength(4);
+    expect(result.nationalResults.senate?.seats).toMatchObject({
+      "coalition-forza-italia-fratelli-d-italia-con-giorgia-meloni-lega-per-salvini-premier-noi-moderati-lupi-toti-brugnaro-udc": 112,
+      "coalition-alleanza-verdi-e-sinistra-europa-impegno-civico-luigi-di-maio-centro-democratico-partito-democratico-italia-democratica-e-progressista": 39,
+      "movimento-5-stelle": 28,
+      "azione-italia-viva-calenda": 9,
+      "sud-chiama-nord": 1
+    });
+    expect(proportionalListSeats(result.seatTrace)).toMatchObject({
+      camera: {
+        "partito-democratico-italia-democratica-e-progressista": 57,
+        "forza-italia": 22,
+        "fratelli-d-italia-con-giorgia-meloni": 69,
+        "alleanza-verdi-e-sinistra": 11,
+        "lega-per-salvini-premier": 23
+      },
+      senate: {
+        "partito-democratico-italia-democratica-e-progressista": 31,
+        "fratelli-d-italia-con-giorgia-meloni": 34,
+        "forza-italia": 9,
+        "lega-per-salvini-premier": 13,
+        "alleanza-verdi-e-sinistra": 3
+      }
+    });
+    expect(sorted(result.electedCandidates.map((candidate) => candidate.candidateId))).toEqual(readReferenceElectedCandidateIds());
   });
 });
 
 function readFixture(name: string): string {
   return readFileSync(resolve("data/input", name), "utf8");
+}
+
+function readReferenceElectedCount(): number {
+  const reference = JSON.parse(readFileSync(resolve("data/reference/elected-2022.json"), "utf8")) as {
+    totals: Record<`${Chamber}.${string}`, number>;
+  };
+  return Object.values(reference.totals).reduce((sum, value) => sum + value, 0);
+}
+
+function readReferenceElectedCandidateIds(): string[] {
+  const reference = JSON.parse(readFileSync(resolve("data/reference/elected-2022.json"), "utf8")) as {
+    elected: Array<{ candidateId: string; electionType: string }>;
+  };
+  expect(reference.elected).toHaveLength(readReferenceElectedCount());
+  return sorted(reference.elected.map((candidate) => candidate.candidateId));
+}
+
+function readFullReference(): {
+  totals: Record<`${Chamber}.${string}`, number>;
+  elected: Array<{ candidateId: string; sourceCoverage?: string }>;
+} {
+  return JSON.parse(readFileSync(resolve("data/reference/elected-2022-full.json"), "utf8"));
+}
+
+function sorted(values: string[]): string[] {
+  return [...values].sort((a, b) => a.localeCompare(b));
+}
+
+function proportionalListSeats(seatTrace: Array<{ allocationStage: string; chamber: Chamber; partyId: string }>): Record<string, Record<string, number>> {
+  const totals: Record<string, Record<string, number>> = {};
+  for (const trace of seatTrace) {
+    if (trace.allocationStage !== "proclamazione candidati") continue;
+    totals[trace.chamber] = totals[trace.chamber] ?? {};
+    totals[trace.chamber][trace.partyId] = (totals[trace.chamber][trace.partyId] ?? 0) + 1;
+  }
+  return totals;
 }

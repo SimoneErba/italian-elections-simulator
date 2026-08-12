@@ -170,11 +170,32 @@ export function validateInput(input: ElectionInput): ValidationResult {
       const withoutBonus = standardDistricts.reduce((sum, district) => sum + district.seatsWithoutBonus, 0);
       const expectedWithBonus = law.chamberRules[chamber].ordinarySeats - law.chamberRules[chamber].bonusSeats;
       const expectedWithoutBonus = law.chamberRules[chamber].ordinarySeats;
-      if (withBonus !== expectedWithBonus || withoutBonus !== expectedWithoutBonus) {
+      if (law.hasGovernabilityBonus && (withBonus !== expectedWithBonus || withoutBonus !== expectedWithoutBonus)) {
         trace.push(
           blocking(
             "seat-table",
             `Tabella seggi ${chamber} non coerente: premio ${withBonus}/${expectedWithBonus}, senza premio ${withoutBonus}/${expectedWithoutBonus}.`
+          )
+        );
+      }
+      if (!law.hasGovernabilityBonus && withoutBonus !== expectedWithoutBonus) {
+        trace.push(
+          blocking(
+            "seat-table",
+            `Tabella seggi ${chamber} non coerente: proporzionale ${withoutBonus}/${expectedWithoutBonus}.`
+          )
+        );
+      }
+    }
+    if (law && law.chamberRules[chamber].singleMemberSeats > 0) {
+      const singleSeats = (input.singleMemberDistricts ?? [])
+        .filter((district) => district.chamber === chamber)
+        .reduce((sum, district) => sum + district.seats, 0);
+      if (singleSeats > law.chamberRules[chamber].singleMemberSeats) {
+        trace.push(
+          blocking(
+            "seat-table",
+            `Tabella collegi uninominali ${chamber} non coerente: ${singleSeats}/${law.chamberRules[chamber].singleMemberSeats}.`
           )
         );
       }

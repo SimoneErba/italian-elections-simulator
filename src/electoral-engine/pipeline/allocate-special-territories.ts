@@ -39,7 +39,7 @@ export function allocateSpecialTerritories(input: ElectionInput): SpecialTerrito
         item.districtId === district.id &&
         item.nominationType === "single-member"
     );
-    const partyId = nomination?.listId ?? winner.candidateId;
+    const partyId = nomination?.connectedSubjectId ?? nomination?.listId ?? winner.candidateId;
     territorialResults.push({
       chamber: district.chamber,
       scope: "single-member",

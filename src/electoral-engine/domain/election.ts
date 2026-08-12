@@ -3,7 +3,7 @@ import type { Fraction } from "../arithmetic/fraction";
 import type { CalculationTraceEntry, SeatAssignmentTrace, TieResolutionRequired } from "./trace";
 import type { ForeignChamberId, ForeignChamberResult, ForeignElectionData } from "../../lib/elections/estero";
 
-export type ElectoralLawVersionId = "ac-2822-a-2026-07-16";
+export type ElectoralLawVersionId = "ac-2822-a-2026-07-16" | "rosatellum-2022";
 
 export type PoliticalList = {
   id: string;
@@ -49,7 +49,7 @@ export type SingleMemberDistrict = {
   regionId: string;
   constituencyId?: string;
   name: string;
-  specialTerritory: "valle-aosta" | "trentino-alto-adige";
+  specialTerritory?: "valle-aosta" | "trentino-alto-adige";
   seats: 1;
 };
 

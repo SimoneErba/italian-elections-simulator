@@ -45,7 +45,7 @@ export const foreignElectionDataSchema = z.object({
 
 export const electionInputSchema = z.object({
   schemaVersion: z.literal("1.0"),
-  lawVersion: z.literal("ac-2822-a-2026-07-16"),
+  lawVersion: z.union([z.literal("ac-2822-a-2026-07-16"), z.literal("rosatellum-2022")]),
   electionDate: z.string().date().optional(),
   lists: z.array(
     z.object({
@@ -93,7 +93,7 @@ export const electionInputSchema = z.object({
         regionId: z.string().min(1),
         constituencyId: z.string().min(1).optional(),
         name: z.string().min(1),
-        specialTerritory: z.union([z.literal("valle-aosta"), z.literal("trentino-alto-adige")]),
+        specialTerritory: z.union([z.literal("valle-aosta"), z.literal("trentino-alto-adige")]).optional(),
         seats: z.literal(1)
       })
     )

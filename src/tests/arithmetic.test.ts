@@ -14,7 +14,7 @@ describe("exact arithmetic", () => {
     const quotient = hareQuotient(1_000n, 7);
     const seats = integerSeatsByQuotient(430n, quotient);
     expect(seats).toBe(3);
-    expect(remainderByQuotient(430n, quotient, seats)).toEqual({ numerator: 10n, denominator: 7n });
+    expect(remainderByQuotient(430n, quotient, seats)).toEqual({ numerator: 4n, denominator: 1n });
   });
 
   it("does not fabricate a winner for an exact legal tie", () => {

@@ -4,6 +4,7 @@ import type { ElectionInput, ThresholdResult } from "../domain/election";
 import type { ChamberVoteTotals } from "./aggregate-votes";
 import { fraction } from "../arithmetic/fraction";
 import { specialTerritoryForMultiMemberDistrict } from "./special-territories";
+import { getLawVersion } from "../rules/registry";
 
 type RegionVotes = Record<string, Record<string, bigint>>;
 
@@ -20,6 +21,7 @@ export function calculateThresholds(
   }
 
   const regionalVotes = listVotesByRegion(chamber, input);
+  const law = getLawVersion(input.lawVersion);
   const admittedCoalitions: string[] = [];
   const admittedSingleLists: string[] = [];
   const admittedCoalitionLists: Record<string, string[]> = {};
@@ -37,7 +39,9 @@ export function calculateThresholds(
       const admittedLists = coalition.listIds.filter((listId) =>
         listPassesCoalitionInternalThreshold(chamber, listId, input, totals, regionalVotes)
       );
-      const recovered = strongestExcludedList(coalition.listIds, admittedLists, totals.listVotes);
+      const recovered = law.hasStrongestExcludedCoalitionListRecovery
+        ? strongestExcludedList(coalition.listIds, admittedLists, totals.listVotes)
+        : undefined;
       admittedCoalitionLists[coalition.id] = recovered ? [...admittedLists, recovered] : admittedLists;
       recoveredCoalitionLists[coalition.id] = recovered;
     }

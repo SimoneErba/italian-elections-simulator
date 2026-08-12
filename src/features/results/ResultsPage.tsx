@@ -42,19 +42,19 @@ const translations = {
     sampleDownloadFailed: "Download dei dati 2022 non riuscito.",
     title: "Simulatore elettorale italiano",
     lead: "Simulazione dei seggi parlamentari secondo la proposta AC 2822-A approvata dalla Camera nel 2026.",
-    loadDemo: "Carica dati 2022",
-    demoLoadedRandomBonus: "Dati 2022 caricati. La lista premio usa candidati random.",
+    loadDemo: "Simula con dati 2022",
+    demoLoadedRandomBonus: "Dati 2022 caricati. La lista premio usa candidati fittizi, perche' non esisteva nel 2022.",
     downloadSample: "Scarica ZIP dati 2022",
     importJsonCsv: "Importa i tuoi dati",
     help: "Aiuto",
-    helpTitle: "Dati richiesti",
-    helpIntro: "Questo simulatore gira nel browser. Puoi partire dal demo 2022, modificare i CSV e reimportarli per vedere come cambiano seggi, premio e proclamati.",
+    helpTitle: "Come usare il simulatore",
+    helpIntro: "Simuliamo la nuova legge partendo dai risultati elettorali: voti di lista, collegi, coalizioni, Estero e liste candidati.",
     helpClose: "Chiudi aiuto",
     helpItems: [
       {
         label: "Come partire",
         body:
-          "Usa Carica scenario demo per vedere subito un risultato. Usa Scarica dati 2022 per ottenere i CSV modificabili. Dopo averli cambiati, selezionali tutti insieme con Importa JSON/CSV."
+          "Usa Simula con dati 2022 per vedere subito il calcolo. Usa Scarica ZIP dati 2022 per ottenere i file modificabili. Dopo averli cambiati, selezionali tutti insieme con Importa i tuoi dati."
       },
       {
         label: "Quali file servono",
@@ -109,7 +109,7 @@ const translations = {
     debugLog: "Debug log",
     steps: "step",
     emptyTitle: "Importa uno scenario o usa il dataset demo",
-    emptyBody: "Il calcolo avviene interamente nel browser e usa aritmetica esatta nel motore TypeScript.",
+    emptyBody: "Simuliamo la nuova legge partendo dai risultati elettorali: voti di lista, collegi, coalizioni, Estero e liste candidati.",
     step: "Step",
     chamber: "Camera",
     seatsColumn: "Seggi",
@@ -181,19 +181,19 @@ const translations = {
     sampleDownloadFailed: "2022 data download failed.",
     title: "Italian election simulator",
     lead: "Parliamentary seat simulation under the AC 2822-A proposal approved by the Chamber in 2026.",
-    loadDemo: "Load 2022 data",
-    demoLoadedRandomBonus: "2022 data loaded. The bonus list uses random candidates.",
+    loadDemo: "Simulate with 2022 data",
+    demoLoadedRandomBonus: "2022 data loaded. The bonus list uses fictional candidates because it did not exist in 2022.",
     downloadSample: "Download 2022 ZIP",
     importJsonCsv: "Import your data",
     help: "Help",
-    helpTitle: "Required data",
-    helpIntro: "This simulator runs in the browser. Start from the 2022 demo, edit the CSVs, and import them again to see how seats, the bonus, and proclaimed members change.",
+    helpTitle: "How to use the simulator",
+    helpIntro: "We simulate the new law from election results: list votes, districts, coalitions, foreign seats, and candidate lists.",
     helpClose: "Close help",
     helpItems: [
       {
         label: "How to start",
         body:
-          "Use Load demo scenario to see a result immediately. Use Download 2022 data to get editable CSVs. After changing them, select all files together with Import JSON/CSV."
+          "Use Simulate with 2022 data to see the calculation immediately. Use Download 2022 ZIP to get editable files. After changing them, select all files together with Import your data."
       },
       {
         label: "Which files matter",
@@ -248,7 +248,7 @@ const translations = {
     debugLog: "Debug log",
     steps: "steps",
     emptyTitle: "Import a scenario or use the demo dataset",
-    emptyBody: "The calculation runs entirely in the browser and uses exact arithmetic in the TypeScript engine.",
+    emptyBody: "We simulate the new law from election results: list votes, districts, coalitions, foreign seats, and candidate lists.",
     step: "Step",
     chamber: "Chamber",
     seatsColumn: "Seats",
@@ -428,8 +428,9 @@ export function ResultsPage() {
               <p className="topbarLead">{subtitle}</p>
             </div>
             <div className="topbarControls">
-              <button type="button" className="secondaryButton helpButton" aria-label={t.helpTitle} onClick={() => setHelpOpen(true)}>
-                ?
+              <button type="button" className="secondaryButton helpButton" onClick={() => setHelpOpen(true)}>
+                <span aria-hidden="true">?</span>
+                <span>{t.help}</span>
               </button>
               <button
                 type="button"
@@ -448,8 +449,8 @@ export function ResultsPage() {
           </div>
           <div className="actions">
             <div className="primaryActions">
-              <button type="button" onClick={() => void downloadSampleData()}>{t.downloadSample}</button>
               <button type="button" onClick={() => void loadDemo()}>{t.loadDemo}</button>
+              <button type="button" onClick={() => void downloadSampleData()}>{t.downloadSample}</button>
               <label className="fileButton">
                 {t.importJsonCsv}
                 <input

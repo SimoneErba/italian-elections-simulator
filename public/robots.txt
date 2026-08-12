@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://simoneerba.github.io/italian-elections-simulator/sitemap.xml

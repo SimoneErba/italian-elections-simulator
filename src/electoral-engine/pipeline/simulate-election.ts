@@ -63,7 +63,9 @@ export function simulateElection(input: ElectionInput): ElectionSimulationResult
     data: thresholds
   });
 
-  const bonus = determineBonus(bonusVotes, thresholds);
+  const bonus = law.hasGovernabilityBonus
+    ? determineBonus(bonusVotes, thresholds)
+    : { awarded: false, failedConditions: ["La legge elettorale non prevede un premio di governabilita."] };
   trace.push({
     id: "bonus-decision",
     stage: "verifica premio",

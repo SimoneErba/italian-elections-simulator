@@ -90,28 +90,46 @@ export function compensateToTargets(
   const current = structuredClone(initialSeats);
   while (true) {
     const totals = totalsBySubject(current);
-    const surplus = Object.entries(totals)
-      .filter(([subject, seats]) => seats > (targetSeats[subject] ?? 0))
-      .sort((a, b) => b[1] - (targetSeats[b[0]] ?? 0) - (a[1] - (targetSeats[a[0]] ?? 0)) || compareVotes(b[0], a[0], nationalVotes))[0];
-    if (!surplus) return current;
-    const [surplusSubject] = surplus;
     const deficitSubjects = Object.entries(targetSeats)
       .filter(([subject, seats]) => (totals[subject] ?? 0) < seats)
       .map(([subject]) => subject);
     if (deficitSubjects.length === 0) return current;
+    const surplusSubjects = Object.entries(totals)
+      .filter(([subject, seats]) => seats > (targetSeats[subject] ?? 0))
+      .map(([subject]) => subject);
+    if (surplusSubjects.length === 0) return current;
 
-    const removeTerritory = Object.keys(current)
-      .filter((territoryId) => (current[territoryId][surplusSubject] ?? 0) > 0)
-      .sort((a, b) => compareFractions(remainders[a]?.[surplusSubject] ?? { numerator: 0n, denominator: 1n }, remainders[b]?.[surplusSubject] ?? { numerator: 0n, denominator: 1n }))[0];
-    if (!removeTerritory) return current;
-    const deficitSubject =
-      deficitSubjects
-        .filter((subject) => remainders[removeTerritory]?.[subject])
-        .sort((a, b) => compareFractions(remainders[removeTerritory][b], remainders[removeTerritory][a]) || compareVotes(b, a, nationalVotes))[0] ??
-      deficitSubjects.sort((a, b) => compareVotes(b, a, nationalVotes))[0];
+    const adjustment = deficitSubjects
+      .flatMap((deficitSubject) =>
+        Object.keys(current)
+          .filter((territoryId) => remainders[territoryId]?.[deficitSubject])
+          .map((territoryId) => ({ deficitSubject, territoryId, remainder: remainders[territoryId][deficitSubject] }))
+      )
+      .filter((item) =>
+        surplusSubjects.some((surplusSubject) => (current[item.territoryId]?.[surplusSubject] ?? 0) > 0)
+      )
+      .sort(
+        (a, b) =>
+          compareFractions(b.remainder, a.remainder) ||
+          compareVotes(b.deficitSubject, a.deficitSubject, nationalVotes) ||
+          a.territoryId.localeCompare(b.territoryId)
+      )[0];
+    if (!adjustment) return current;
 
-    current[removeTerritory][surplusSubject] -= 1;
-    current[removeTerritory][deficitSubject] = (current[removeTerritory][deficitSubject] ?? 0) + 1;
+    const surplusSubject = surplusSubjects
+      .filter((subject) => (current[adjustment.territoryId]?.[subject] ?? 0) > 0)
+      .sort(
+        (a, b) =>
+          compareFractions(
+            remainders[adjustment.territoryId]?.[a] ?? { numerator: 0n, denominator: 1n },
+            remainders[adjustment.territoryId]?.[b] ?? { numerator: 0n, denominator: 1n }
+          ) ||
+          compareVotes(a, b, nationalVotes)
+      )[0];
+    if (!surplusSubject) return current;
+
+    current[adjustment.territoryId][surplusSubject] -= 1;
+    current[adjustment.territoryId][adjustment.deficitSubject] = (current[adjustment.territoryId][adjustment.deficitSubject] ?? 0) + 1;
   }
 }
 
