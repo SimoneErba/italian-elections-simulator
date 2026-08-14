@@ -100,7 +100,7 @@ export function proclaimRosatellum2022(
     if (!changed) break;
   }
 
-  const proportional: Choice[] = [...choices.values()].flat();
+  let proportional: Choice[] = [...choices.values()].flat();
   // The Article 84 recovery pass uses the live remainder state produced by
   // articles 83/83-bis.  It may create a new multiple election, resolved by
   // Article 85 only after every recovery has been made.
@@ -129,7 +129,7 @@ export function proclaimRosatellum2022(
     }
   }
 
-  resolveRecoveryPluricandidacies(input, proportional, local, singleWinners, ties);
+  proportional = resolveRecoveryPluricandidacies(input, proportional, local, singleWinners, ties);
 
   const positionBySeat = new Map<string, number>();
   for (const choice of proportional) {
@@ -237,13 +237,14 @@ function collegesByCandidate(choices: Choice[]): Map<string, Set<string>> {
   return result;
 }
 
-function resolveRecoveryPluricandidacies(input: ElectionInput, choices: Choice[], local: Map<string, CandidateNomination[]>, singleWinners: Set<string>, ties: TieResolutionRequired[]) {
+function resolveRecoveryPluricandidacies(input: ElectionInput, choices: Choice[], local: Map<string, CandidateNomination[]>, singleWinners: Set<string>, ties: TieResolutionRequired[]): Choice[] {
   for (let iteration = 0; iteration < 100; iteration += 1) {
     const occurrences = new Map<string, number[]>();
     choices.forEach((choice, index) => occurrences.set(choice.nomination.candidateId, [...(occurrences.get(choice.nomination.candidateId) ?? []), index]));
     const duplicates = [...occurrences.values()].filter((indexes) => indexes.length > 1);
-    if (duplicates.length === 0) return;
+    if (duplicates.length === 0) return choices;
     let changed = false;
+    const unproclaimed = new Set<number>();
     for (const indexes of duplicates) {
       const kept = [...indexes].sort((a, b) => compareListShares(input, choices[a].demand, choices[b].demand))[0];
       const occupied = new Set([...singleWinners, ...choices.map((choice) => choice.nomination.candidateId)]);
@@ -251,14 +252,21 @@ function resolveRecoveryPluricandidacies(input: ElectionInput, choices: Choice[]
         if (index === kept) continue;
         const vacancy = choices[index];
         const replacement = (local.get(demandKey(vacancy.demand.chamber, vacancy.demand.districtId, vacancy.demand.listId)) ?? []).find((nomination) => !occupied.has(nomination.candidateId));
-        if (!replacement) { ties.push(unresolved([vacancy.demand.listId], vacancy.demand.districtId, "subentro locale dopo plurielezione non disponibile")); continue; }
+        if (!replacement) {
+          ties.push(unresolved([vacancy.demand.listId], vacancy.demand.districtId, "subentro locale dopo plurielezione non disponibile"));
+          unproclaimed.add(index);
+          changed = true;
+          continue;
+        }
         choices[index] = { demand: vacancy.demand, nomination: replacement, reason: `${vacancy.reason ? `${vacancy.reason}; ` : ""}articolo 85: subentro nel collegio liberato` };
         occupied.add(replacement.candidateId);
         changed = true;
       }
     }
-    if (!changed) return;
+    if (unproclaimed.size > 0) choices = choices.filter((_, index) => !unproclaimed.has(index));
+    if (!changed) return choices;
   }
+  return choices;
 }
 
 function bestSingleLoser(

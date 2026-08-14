@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { formatBigInt, formatPercent, percentage } from "../../electoral-engine/arithmetic/fraction";
 import type { Chamber } from "../../electoral-engine/domain/chamber";
-import type { Candidate, ElectionInput, ElectionSimulationResult } from "../../electoral-engine/domain/election";
+import type { Candidate, ElectoralLawVersionId, ElectionInput, ElectionSimulationResult } from "../../electoral-engine/domain/election";
 import { loadLegacyCameraCsv } from "../../datasets/loaders/legacy-csv-loader";
 import { loadScenarioJson } from "../../datasets/loaders/json-loader";
 import { aggregateVotes } from "../../electoral-engine/pipeline/aggregate-votes";
@@ -14,6 +14,13 @@ import bonusCandidateListsUrl from "../../../data/input/bonus-candidates-2022-ra
 import foreignElectionUrl from "../../../data/input/estero.json?url";
 
 type Language = "it" | "en";
+type SimulationMode = "2026" | "rosatellum" | "comparison";
+
+const lawVersionsForMode: Record<SimulationMode, ElectoralLawVersionId[]> = {
+  "2026": ["ac-2822-a-2026-07-16"],
+  rosatellum: ["rosatellum-2022"],
+  comparison: ["ac-2822-a-2026-07-16", "rosatellum-2022"]
+};
 
 const sampleDataFiles = [
   { url: cameraScrutiniUrl, name: "Politiche2022_Scrutini_Camera_Italia.csv" },
@@ -46,6 +53,12 @@ const translations = {
     demoLoadedRandomBonus: "Dati 2022 caricati. La lista premio usa candidati fittizi, perche' non esisteva nel 2022.",
     downloadSample: "Scarica ZIP dati 2022",
     importJsonCsv: "Importa i tuoi dati",
+    simulationMode: "Modalita di simulazione",
+    law2026: "Nuova legge 2026",
+    lawRosatellum: "Rosatellum 2022",
+    lawComparison: "Confronta le leggi",
+    bonusFileNote: "Il file bonus-candidates serve solo per la nuova legge 2026; non e necessario per Rosatellum.",
+    comparisonResults: "Confronto risultati",
     help: "Aiuto",
     helpTitle: "Come usare il simulatore",
     helpIntro: "Simuliamo la nuova legge partendo dai risultati elettorali: voti di lista, collegi, coalizioni, Estero e liste candidati.",
@@ -185,6 +198,12 @@ const translations = {
     demoLoadedRandomBonus: "2022 data loaded. The bonus list uses fictional candidates because it did not exist in 2022.",
     downloadSample: "Download 2022 ZIP",
     importJsonCsv: "Import your data",
+    simulationMode: "Simulation mode",
+    law2026: "New 2026 law",
+    lawRosatellum: "Rosatellum 2022",
+    lawComparison: "Compare laws",
+    bonusFileNote: "The bonus-candidates file is only used for the new 2026 law; it is not needed for Rosatellum.",
+    comparisonResults: "Results comparison",
     help: "Help",
     helpTitle: "How to use the simulator",
     helpIntro: "We simulate the new law from election results: list votes, districts, coalitions, foreign seats, and candidate lists.",
@@ -308,7 +327,7 @@ const translations = {
 type Translation = (typeof translations)[Language];
 
 export function ResultsPage() {
-  const { scenario, result, loadScenario, loadOnDataFiles, loadFixture } = useAppStore();
+  const { scenario, results, loadScenario, loadOnDataFiles, loadFixture } = useAppStore();
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
   const [loadingStatus, setLoadingStatus] = useState<string>();
@@ -322,9 +341,10 @@ export function ResultsPage() {
     return savedLanguage === "en" ? "en" : "it";
   });
   const [helpOpen, setHelpOpen] = useState(false);
+  const [simulationMode, setSimulationMode] = useState<SimulationMode>("2026");
   const t = translations[language];
   const themeToggleLabel = darkTheme ? t.themeLight : t.themeDark;
-  const subtitle = scenario?.lawVersion ? `${t.lead} ${t.law}: ${scenario.lawVersion}` : t.lead;
+  const subtitle = t.lead;
   const subjectNameById = useMemo(() => buildSubjectNameById(scenario), [scenario]);
   const candidateById = useMemo(() => buildCandidateById(scenario), [scenario]);
 
@@ -344,7 +364,7 @@ export function ResultsPage() {
     setLoadingStatus(t.loadingDemo);
     try {
       await nextFrame();
-      await loadFixture();
+      await loadFixture(lawVersionsForMode[simulationMode]);
       setNotice(t.demoLoadedRandomBonus);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : t.demoLoadFailed);
@@ -359,7 +379,7 @@ export function ResultsPage() {
     setLoadingStatus(t.downloadingSample);
     try {
       const files = [];
-      for (const file of sampleDataFiles) {
+      for (const file of sampleDataFiles.filter((file) => simulationMode !== "rosatellum" || !isBonusFile(file.name))) {
         const response = await fetch(file.url);
         if (!response.ok) throw new Error(`${t.sampleDownloadFailed} ${file.name}`);
         files.push({ name: file.name, data: new Uint8Array(await response.arrayBuffer()) });
@@ -402,14 +422,14 @@ export function ResultsPage() {
           cameraCandidateListCsv: cameraCandidates?.text,
           senateCandidateListCsv: senateCandidates?.text,
           foreignElectionJson: foreignElection.text
-        });
+        }, lawVersionsForMode[simulationMode]);
       } else {
         const loaded = csvFiles.length > 1
           ? failImport(t.unrecognizedFolder)
           : selected[0]?.name.toLowerCase().endsWith(".csv")
             ? loadLegacyCameraCsv(texts[0].text)
             : loadScenarioJson(texts[0].text);
-        await loadScenario(loaded);
+        await loadScenario(loaded, lawVersionsForMode[simulationMode]);
       }
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : t.importFailed);
@@ -464,6 +484,24 @@ export function ResultsPage() {
                 />
               </label>
             </div>
+            <fieldset className="lawModePicker">
+              <legend>{t.simulationMode}</legend>
+              {(["2026", "rosatellum", "comparison"] as const).map((mode) => (
+                <label key={mode}>
+                  <input
+                    type="radio"
+                    name="simulation-mode"
+                    checked={simulationMode === mode}
+                    onChange={() => {
+                      setSimulationMode(mode);
+                      if (scenario) void loadScenario(scenario, lawVersionsForMode[mode]);
+                    }}
+                  />
+                  {mode === "2026" ? t.law2026 : mode === "rosatellum" ? t.lawRosatellum : t.lawComparison}
+                </label>
+              ))}
+            </fieldset>
+            <p className="bonusFileNote">{t.bonusFileNote}</p>
           </div>
         </div>
       </section>
@@ -474,27 +512,24 @@ export function ResultsPage() {
       {error ? <div className="alert">{error}</div> : null}
       {notice ? <div className="noticeBanner">{notice}</div> : null}
 
-      {result ? (
-        <section className="resultCards" aria-label={t.simulationResults}>
-          <CollapsibleCard title={t.nationalResults} meta={`${nationalSubjectCount(result)} ${t.subjects}`} defaultOpen>
-            <ChamberResult chamber="camera" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} />
-            <ChamberResult chamber="senate" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} />
-          </CollapsibleCard>
-          <CollapsibleCard title={t.parliamentArcs} meta={`${totalAssignedSeats(result)} ${t.seats}`} defaultOpen>
-            <ParliamentArcsOverview result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
-          </CollapsibleCard>
-          <CollapsibleCard title={t.bonusDetails} meta={result.bonus.awarded ? t.bonusYes : t.bonusNo} defaultOpen>
-            <BonusReport scenario={scenario} result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
-          </CollapsibleCard>
-          <CollapsibleCard title={t.proclaimedMembers} meta={`${result.electedCandidates.length} ${t.names}`}>
-            <ElectedCandidatesReport result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
-          </CollapsibleCard>
-          <CollapsibleCard title={t.constituencyReport} meta={`${scenario?.constituencies.length ?? 0} ${t.constituency.toLowerCase()}`}>
-            <ConstituencyReport scenario={scenario} result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
-          </CollapsibleCard>
-          <CollapsibleCard title={t.debugLog} meta={`${buildDebugRows(result, subjectNameById, candidateById, t).length} ${t.steps}`}>
-            <DebugLog result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
-          </CollapsibleCard>
+      {results ? (
+        <section className={simulationMode === "comparison" ? "comparisonResults" : "resultCards"} aria-label={t.simulationResults}>
+          {lawVersionsForMode[simulationMode].map((lawVersion) => {
+            const result = results[lawVersion];
+            if (!result) return null;
+            return (
+              <SimulationReport
+                key={lawVersion}
+                className={simulationMode === "comparison" ? "comparisonColumn" : undefined}
+                title={simulationMode === "comparison" ? (lawVersion === "ac-2822-a-2026-07-16" ? t.law2026 : t.lawRosatellum) : undefined}
+                scenario={scenario ? { ...scenario, lawVersion } : scenario}
+                result={result}
+                subjectNameById={subjectNameById}
+                candidateById={candidateById}
+                t={t}
+              />
+            );
+          })}
         </section>
       ) : (
         <section className="emptyState">
@@ -532,6 +567,51 @@ function HelpDialog({ t, onClose }: { t: Translation; onClose: () => void }) {
           ))}
         </dl>
       </section>
+    </div>
+  );
+}
+
+function SimulationReport({
+  className,
+  title,
+  scenario,
+  result,
+  subjectNameById,
+  candidateById,
+  t
+}: {
+  className?: string;
+  title?: string;
+  scenario?: ElectionInput;
+  result: ElectionSimulationResult;
+  subjectNameById: Map<string, string>;
+  candidateById: Map<string, Candidate>;
+  t: Translation;
+}) {
+  return (
+    <div className={className}>
+      {title ? <h2 className="comparisonTitle">{title}</h2> : null}
+      <div className="resultCards">
+        <CollapsibleCard title={t.nationalResults} meta={`${nationalSubjectCount(result)} ${t.subjects}`} defaultOpen>
+          <ChamberResult chamber="camera" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} />
+          <ChamberResult chamber="senate" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} />
+        </CollapsibleCard>
+        <CollapsibleCard title={t.parliamentArcs} meta={`${totalAssignedSeats(result)} ${t.seats}`} defaultOpen>
+          <ParliamentArcsOverview result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
+        </CollapsibleCard>
+        <CollapsibleCard title={t.bonusDetails} meta={result.bonus.awarded ? t.bonusYes : t.bonusNo} defaultOpen>
+          <BonusReport scenario={scenario} result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
+        </CollapsibleCard>
+        <CollapsibleCard title={t.proclaimedMembers} meta={`${result.electedCandidates.length} ${t.names}`}>
+          <ElectedCandidatesReport result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
+        </CollapsibleCard>
+        <CollapsibleCard title={t.constituencyReport} meta={`${scenario?.constituencies.length ?? 0} ${t.constituency.toLowerCase()}`}>
+          <ConstituencyReport scenario={scenario} result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
+        </CollapsibleCard>
+        <CollapsibleCard title={t.debugLog} meta={`${buildDebugRows(result, subjectNameById, candidateById, t).length} ${t.steps}`}>
+          <DebugLog result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
+        </CollapsibleCard>
+      </div>
     </div>
   );
 }
@@ -1085,7 +1165,7 @@ function ChamberResult({
 }: {
   chamber: Chamber;
   scenario: ElectionInput | undefined;
-  result: NonNullable<ReturnType<typeof useAppStore.getState>["result"]>;
+  result: ElectionSimulationResult;
   subjectNameById: Map<string, string>;
   t: Translation;
 }) {

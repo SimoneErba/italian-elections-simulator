@@ -1,15 +1,15 @@
-import type { ElectionInput, ElectionSimulationResult } from "../electoral-engine/domain/election";
+import type { ElectoralLawVersionId, ElectionInput, ElectionSimulationResult } from "../electoral-engine/domain/election";
 import type { OnDataImportFiles } from "../datasets/loaders/ondata-2022-loader";
 import type { SimulationWorkerRequest, SimulationWorkerResponse } from "./simulation-worker";
 
-type SimulationBundle = {
+export type SimulationBundle = {
   scenario: ElectionInput;
-  result: ElectionSimulationResult;
+  results: Partial<Record<ElectoralLawVersionId, ElectionSimulationResult>>;
 };
 
 type SimulationRequestPayload =
-  | { kind: "scenario"; scenario: ElectionInput }
-  | { kind: "ondata"; files: OnDataImportFiles };
+  | { kind: "scenario"; scenario: ElectionInput; lawVersions: ElectoralLawVersionId[] }
+  | { kind: "ondata"; files: OnDataImportFiles; lawVersions: ElectoralLawVersionId[] };
 
 let nextRequestId = 1;
 let worker: Worker | undefined;
@@ -18,12 +18,12 @@ const pending = new Map<
   { resolve: (bundle: SimulationBundle) => void; reject: (error: Error) => void }
 >();
 
-export function simulateScenarioInWorker(scenario: ElectionInput): Promise<SimulationBundle> {
-  return send({ kind: "scenario", scenario });
+export function simulateScenarioInWorker(scenario: ElectionInput, lawVersions: ElectoralLawVersionId[]): Promise<SimulationBundle> {
+  return send({ kind: "scenario", scenario, lawVersions });
 }
 
-export function loadOnDataInWorker(files: OnDataImportFiles): Promise<SimulationBundle> {
-  return send({ kind: "ondata", files });
+export function loadOnDataInWorker(files: OnDataImportFiles, lawVersions: ElectoralLawVersionId[]): Promise<SimulationBundle> {
+  return send({ kind: "ondata", files, lawVersions });
 }
 
 function send(request: SimulationRequestPayload): Promise<SimulationBundle> {
@@ -43,7 +43,7 @@ function getWorker(): Worker {
     const request = pending.get(response.id);
     if (!request) return;
     pending.delete(response.id);
-    if (response.ok) request.resolve({ scenario: response.scenario, result: response.result });
+    if (response.ok) request.resolve({ scenario: response.scenario, results: response.results });
     else request.reject(new Error(response.error));
   };
   worker.onerror = (event) => {

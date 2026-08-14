@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ElectionInput, ElectionSimulationResult } from "../electoral-engine/domain/election";
+import type { ElectoralLawVersionId, ElectionInput, ElectionSimulationResult } from "../electoral-engine/domain/election";
 import type { OnDataImportFiles } from "../datasets/loaders/ondata-2022-loader";
 import { loadOnDataInWorker, simulateScenarioInWorker } from "./simulation-client";
 import cameraCandidateListUrl from "../../data/input/camera-2022-candidatilista.csv?url";
@@ -12,27 +12,27 @@ import specialTerritoriesUrl from "../../data/input/special-territories-2022.jso
 
 type AppState = {
   scenario?: ElectionInput;
-  result?: ElectionSimulationResult;
-  loadScenario: (scenario: ElectionInput) => Promise<void>;
-  loadOnDataFiles: (files: OnDataImportFiles) => Promise<void>;
-  loadFixture: () => Promise<void>;
+  results?: Partial<Record<ElectoralLawVersionId, ElectionSimulationResult>>;
+  loadScenario: (scenario: ElectionInput, lawVersions: ElectoralLawVersionId[]) => Promise<void>;
+  loadOnDataFiles: (files: OnDataImportFiles, lawVersions: ElectoralLawVersionId[]) => Promise<void>;
+  loadFixture: (lawVersions: ElectoralLawVersionId[]) => Promise<void>;
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  loadScenario: async (scenario) => {
-    const bundle = await simulateScenarioInWorker(scenario);
+  loadScenario: async (scenario, lawVersions) => {
+    const bundle = await simulateScenarioInWorker(scenario, lawVersions);
     set(bundle);
   },
-  loadOnDataFiles: async (files) => {
-    const bundle = await loadOnDataInWorker(files);
+  loadOnDataFiles: async (files, lawVersions) => {
+    const bundle = await loadOnDataInWorker(files, lawVersions);
     set(bundle);
   },
-  loadFixture: async () => {
+  loadFixture: async (lawVersions) => {
     const [cameraScrutiniCsv, senateScrutiniCsv, bonusCandidateListsCsv, cameraCandidateListCsv, senateCandidateListCsv, foreignElectionJson, specialTerritoriesJson] =
       await Promise.all([
         fetchText(cameraScrutiniUrl),
         fetchText(senateScrutiniUrl),
-        fetchText(bonusCandidateListsUrl),
+        lawVersions.includes("ac-2822-a-2026-07-16") ? fetchText(bonusCandidateListsUrl) : Promise.resolve(undefined),
         fetchText(cameraCandidateListUrl),
         fetchText(senateCandidateListUrl),
         fetchText(foreignElectionUrl),
@@ -46,7 +46,7 @@ export const useAppStore = create<AppState>((set) => ({
       senateCandidateListCsv,
       foreignElectionJson,
       specialTerritoriesJson
-    });
+    }, lawVersions);
     set(bundle);
   }
 }));
