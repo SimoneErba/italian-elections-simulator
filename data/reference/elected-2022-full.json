@@ -2850,10 +2850,10 @@
       "electionType": "single-member",
       "constituency": "LIGURIA",
       "district": "LIGURIA - U03 (GENOVA: MUNICIPIO I - CENTRO EST)",
-      "list": "FRATELLI D'ITALIA CON GIORGIA MELONI, LEGA PER SALVINI PREMIER, FORZA ITALIA, NOI MODERATI/LUPI - TOTI - BRUGNARO - UDC",
-      "candidate": "SANDRO MARIO BIASOTTI",
-      "votes": 4248,
-      "candidateId": "camera-liguria-u03-genova-municipio-i-centro-est-biasotti-sandro-mario"
+      "list": "PARTITO DEMOCRATICO - ITALIA DEMOCRATICA E PROGRESSISTA, ALLEANZA VERDI E SINISTRA, IMPEGNO CIVICO LUIGI DI MAIO - CENTRO DEMOCRATICO, +EUROPA",
+      "candidate": "LUCA PASTORINO",
+      "votes": 73532,
+      "candidateId": "camera-liguria-u03-genova-municipio-i-centro-est-pastorino-luca"
     },
     {
       "chamber": "camera",

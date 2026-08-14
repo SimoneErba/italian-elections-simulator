@@ -83,8 +83,8 @@ function listPassesListThreshold(
   const nationalPercent = percentage(totals.listVotes[listId] ?? 0n, totals.totalValidVotes);
   return (
     compareFractions(nationalPercent, fraction(3n)) >= 0 ||
-    passesRegional20(chamber, listId, input, regionalVotes) ||
-    passesLinguisticMinority20(listId, input, regionalVotes)
+    (chamber === "senate" && passesRegional20(chamber, listId, input, regionalVotes)) ||
+    passesLinguisticMinorityConditions(chamber, listId, input, regionalVotes)
   );
 }
 
@@ -99,7 +99,7 @@ function listPassesCoalitionInternalThreshold(
   return (
     compareFractions(nationalPercent, fraction(3n)) >= 0 ||
     (chamber === "senate" && passesRegional20(chamber, listId, input, regionalVotes)) ||
-    passesLinguisticMinority20(listId, input, regionalVotes)
+    passesLinguisticMinorityConditions(chamber, listId, input, regionalVotes)
   );
 }
 
@@ -113,12 +113,28 @@ function passesRegional20(_chamber: Chamber, listId: string, input: ElectionInpu
   return false;
 }
 
-function passesLinguisticMinority20(listId: string, input: ElectionInput, regionalVotes: RegionVotes): boolean {
+function passesLinguisticMinorityConditions(chamber: Chamber, listId: string, input: ElectionInput, regionalVotes: RegionVotes): boolean {
   const list = input.lists.find((item) => item.id === listId);
   if (!list?.isLinguisticMinority || !list.protectedRegionId) return false;
   const regionVotes = regionalVotes[list.protectedRegionId] ?? {};
   const total = Object.values(regionVotes).reduce((sum, votes) => sum + votes, 0n);
-  return compareFractions(percentage(regionVotes[listId] ?? 0n, total), fraction(20n)) >= 0;
+  if (compareFractions(percentage(regionVotes[listId] ?? 0n, total), fraction(20n)) >= 0) return true;
+  const districts = (input.singleMemberDistricts ?? []).filter(
+    (district) => district.chamber === chamber && district.regionId === list.protectedRegionId
+  );
+  if (districts.length === 0) return false;
+  const requiredWins = Math.ceil(districts.length / 4);
+  const wins = districts.filter((district) => {
+    const winner = (input.candidateVotes ?? [])
+      .filter((vote) => vote.chamber === chamber && vote.districtId === district.id)
+      .sort((a, b) => a.votes === b.votes ? a.candidateId.localeCompare(b.candidateId) : a.votes > b.votes ? -1 : 1)[0];
+    if (!winner) return false;
+    return (input.nominations ?? []).some(
+      (nomination) => nomination.candidateId === winner.candidateId && nomination.chamber === chamber &&
+        (nomination.listId === listId || nomination.connectedSubjectId === list.coalitionId)
+    );
+  }).length;
+  return wins >= requiredWins;
 }
 
 function strongestExcludedList(

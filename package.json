@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts"
+    ,"audit:2022": "esbuild scripts/audit-2022.ts --bundle --platform=node --format=esm --outfile=/tmp/italian-elections-audit-2022.mjs && node /tmp/italian-elections-audit-2022.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",

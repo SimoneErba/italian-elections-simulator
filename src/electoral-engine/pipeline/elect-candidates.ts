@@ -110,7 +110,11 @@ export function electCandidates(
     }
   }
 
-  const proportional = assignProportionalCandidates(input, proportionalDemands, electedByCandidate);
+  // The legacy AC pipeline only uses its historic local-list behaviour when
+  // invoked without threshold results (small callers/tests).  Rosatellum's
+  // statutory cross-district recovery is implemented by its dedicated
+  // proclamation module.
+  const proportional = assignProportionalCandidates(input, proportionalDemands, electedByCandidate, Boolean(thresholds));
   elected.push(...proportional.elected);
   seatTrace.push(...proportional.seatTrace);
   ties.push(...proportional.ties);
@@ -137,7 +141,8 @@ type ProportionalAssignment = {
 function assignProportionalCandidates(
   input: ElectionInput,
   demands: ProportionalSeatDemand[],
-  alreadyElected: Map<string, ElectedCandidate>
+  alreadyElected: Map<string, ElectedCandidate>,
+  allowCrossDistrictRecovery: boolean
 ): CandidateElectionResult {
   const electedByCandidate = new Map(alreadyElected);
   const assignmentByCandidate = new Map<string, ProportionalAssignment>();
@@ -176,7 +181,7 @@ function assignProportionalCandidates(
       fill(replacementDemand);
       return;
     }
-    const replacement = createReplacementDemand(input, demand, allDemands, electedByCandidate);
+    const replacement = allowCrossDistrictRecovery ? createReplacementDemand(input, demand, allDemands, electedByCandidate) : undefined;
     if (replacement) {
       allDemands.push(replacement);
       fill(replacement);
@@ -409,6 +414,15 @@ function expandCoalitionDistrictSeats(
       output[subjectId] = (output[subjectId] ?? 0) + seats;
     }
     seatsByDistrict[result.territoryId] = output;
+  }
+
+  // A district-only result is useful to small callers and fixtures.  There
+  // is no parent allocation to expand in that form, so expand it locally.
+  for (const result of districtResults) {
+    if (Object.keys(seatsByDistrict[result.territoryId] ?? {}).length > 0) continue;
+    const expanded = expandCoalitionSeats(input, result, thresholds?.[result.chamber]);
+    seatsByDistrict[result.territoryId] = expanded.seats;
+    ties.push(...expanded.ties);
   }
 
   for (const chamber of ["camera", "senate"] satisfies Chamber[]) {

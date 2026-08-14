@@ -1,6 +1,5 @@
 import type { Chamber } from "../../electoral-engine/domain/chamber";
 import type { BonusCandidatePriority, Candidate, CandidateNomination, ElectionInput } from "../../electoral-engine/domain/election";
-import { officialDistrictSeatCapacity } from "../../electoral-engine/rules/ac-2822-a/territorial-seats";
 import type { ForeignElectionData } from "../../lib/elections/estero";
 import { foreignElectionDataSchema } from "../schemas/election-input-schema";
 import { normalizeInteger, normalizeListName, parseDelimited, slug, unique } from "./csv";
@@ -46,7 +45,7 @@ type BonusCandidatePriorityRow = {
 };
 
 type CandidateListRow = {
-  CODTIPOELEZIONE: string;
+  CODTIPOELEZIONE?: string;
   Circoscrizione?: string;
   Regione?: string;
   CollPlurinom: string;
@@ -67,6 +66,7 @@ export type OnDataImportFiles = {
   cameraCandidateListCsv?: string;
   senateCandidateListCsv?: string;
   foreignElectionJson: string;
+  specialTerritoriesJson?: string;
 };
 
 export function loadOnData2022Scenario(files: OnDataImportFiles): ElectionInput {
@@ -107,7 +107,7 @@ export function loadOnData2022Scenario(files: OnDataImportFiles): ElectionInput 
   ).map((key) => {
     const [chamber, constituencyName, districtName] = key.split("|") as [Chamber, string, string];
     const id = districtId(chamber, districtName);
-    const capacity = rosatellum2022DistrictSeatCapacity(id) ?? officialDistrictSeatCapacity(id);
+    const capacity = rosatellum2022DistrictSeatCapacity(id);
     if (!capacity) {
       throw new Error(`Tabella seggi ufficiale mancante per ${id}.`);
     }
@@ -136,30 +136,71 @@ export function loadOnData2022Scenario(files: OnDataImportFiles): ElectionInput 
   const nominationBundle = loadCandidateListFiles(files.cameraCandidateListCsv, files.senateCandidateListCsv);
   const bonusNominations = files.bonusNominationsCsv ? loadBonusNominationsCsv(files.bonusNominationsCsv) : [];
   const bonusCandidateBundle = files.bonusCandidateListsCsv ? loadBonusCandidateListsCsv(files.bonusCandidateListsCsv) : { candidates: [], priorities: [] };
+  const identityBundle = reconcileCandidateIdentities(
+    mergeCandidates(nominationBundle.candidates, bonusCandidateBundle.candidates, singleMemberBundle.candidates),
+    [...nominationBundle.nominations, ...bonusNominations, ...singleMemberBundle.nominations],
+    lists
+  );
 
+  const specialTerritories = files.specialTerritoriesJson ? loadSpecialTerritoriesJson(files.specialTerritoriesJson) : undefined;
+  const special = specialTerritories ? buildSpecialTerritoryBundle(specialTerritories, lists) : undefined;
   return {
     schemaVersion: "1.0",
     lawVersion: "rosatellum-2022",
     electionDate: "2022-09-25",
-    lists,
+    lists: special ? mergePoliticalLists(lists, special.lists) : lists,
     coalitions,
-    regions,
-    constituencies,
+    regions: special ? uniqueById([...regions, ...special.regions]) : regions,
+    constituencies: special ? uniqueById([...constituencies, ...special.constituencies]) : constituencies,
     multiMemberDistricts,
-    singleMemberDistricts: singleMemberBundle.districts,
+    singleMemberDistricts: special ? [...singleMemberBundle.districts, ...special.districts] : singleMemberBundle.districts,
     listVotes,
-    candidateVotes: singleMemberBundle.candidateVotes,
-    candidates:
-      nominationBundle.candidates.length > 0 || bonusCandidateBundle.candidates.length > 0 || singleMemberBundle.candidates.length > 0
-        ? mergeCandidates(nominationBundle.candidates, bonusCandidateBundle.candidates, singleMemberBundle.candidates)
-        : undefined,
-    nominations:
-      nominationBundle.nominations.length > 0 || bonusNominations.length > 0 || singleMemberBundle.nominations.length > 0
-        ? [...nominationBundle.nominations, ...bonusNominations, ...singleMemberBundle.nominations]
-        : undefined,
+    candidateVotes: special ? [...singleMemberBundle.candidateVotes, ...special.candidateVotes] : singleMemberBundle.candidateVotes,
+    candidates: identityBundle.candidates.length > 0 ? [...identityBundle.candidates, ...(special?.candidates ?? [])] : special?.candidates,
+    nominations: identityBundle.nominations.length > 0 ? [...identityBundle.nominations, ...(special?.nominations ?? [])] : special?.nominations,
     bonusCandidateLists: bonusCandidateBundle.priorities.length > 0 ? bonusCandidateBundle.priorities : undefined,
-    foreignElection: loadForeignElectionJson(files.foreignElectionJson)
+    foreignElection: loadForeignElectionJson(files.foreignElectionJson),
+    coverageWarnings: special ? undefined : ["Copertura territoriale incompleta: manca il file speciale 2022 per Valle d'Aosta e Senato Trentino-Alto Adige/Südtirol."]
   };
+}
+
+type SpecialTerritoryFixture = { districts: Array<{ chamber: Chamber; region: string; district: string; winner: { firstName: string; lastName: string; votes: string; listName: string } }> };
+
+function loadSpecialTerritoriesJson(text: string): SpecialTerritoryFixture {
+  return JSON.parse(text) as SpecialTerritoryFixture;
+}
+
+function buildSpecialTerritoryBundle(fixture: SpecialTerritoryFixture, currentLists: ElectionInput["lists"]) {
+  const lists: ElectionInput["lists"] = [];
+  const regions: ElectionInput["regions"] = [];
+  const constituencies: ElectionInput["constituencies"] = [];
+  const districts: NonNullable<ElectionInput["singleMemberDistricts"]> = [];
+  const candidates: Candidate[] = [];
+  const nominations: CandidateNomination[] = [];
+  const candidateVotes: NonNullable<ElectionInput["candidateVotes"]> = [];
+  for (const item of fixture.districts) {
+    const region = regionId(item.region);
+    const constituency = constituencyId(item.chamber, item.region);
+    const district = singleMemberDistrictId(item.chamber, item.district);
+    const list = listId(item.winner.listName);
+    if (!currentLists.some((entry) => entry.id === list) && !lists.some((entry) => entry.id === list)) lists.push({ id: list, name: item.winner.listName, ...minorityMetadata(item.winner.listName) });
+    regions.push({ id: region, name: item.region });
+    constituencies.push({ id: constituency, chamber: item.chamber, regionId: region, name: item.region });
+    districts.push({ id: district, chamber: item.chamber, regionId: region, constituencyId: constituency, name: item.district, specialTerritory: region.includes("valle-d-aosta") ? "valle-aosta" : "trentino-alto-adige", seats: 1 });
+    const candidateId = singleMemberCandidateId(item.chamber, item.district, item.winner.lastName, item.winner.firstName);
+    candidates.push({ id: candidateId, firstName: item.winner.firstName, lastName: item.winner.lastName, party: list });
+    nominations.push({ candidateId, chamber: item.chamber, listId: list, connectedSubjectId: list, districtId: district, constituencyId: constituency, position: 1, nominationType: "single-member" });
+    candidateVotes.push({ chamber: item.chamber, districtId: district, candidateId, votes: BigInt(item.winner.votes) });
+  }
+  return { lists, regions, constituencies, districts, candidates, nominations, candidateVotes };
+}
+
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  return [...new Map(items.map((item) => [item.id, item])).values()];
+}
+
+function mergePoliticalLists(base: ElectionInput["lists"], additions: ElectionInput["lists"]): ElectionInput["lists"] {
+  return uniqueById([...base, ...additions]);
 }
 
 function addSoloCandidateVotesProQuota(rows: Array<OnDataScrutiniRow & { chamber: Chamber }>): Array<OnDataScrutiniRow & { chamber: Chamber; votes: bigint }> {
@@ -178,14 +219,19 @@ function addSoloCandidateVotesProQuota(rows: Array<OnDataScrutiniRow & { chamber
   const output: Array<OnDataScrutiniRow & { chamber: Chamber; votes: bigint }> = [];
   for (const group of grouped.values()) {
     const baseVotes = group.map((row) => BigInt(normalizeInteger(row["VOTI LISTE"])));
-    const soloVotes = BigInt(normalizeInteger(group[0]["VOTI SOLO CANDIDATO"] ?? "0"));
+    const explicitSolo = group[0]["VOTI SOLO CANDIDATO"];
+    const candidateVotes = BigInt(normalizeInteger(group[0]["VOTI CANDIDATO"] ?? "0"));
+    const listedVotes = baseVotes.reduce((sum, value) => sum + value, 0n);
+    const soloVotes = explicitSolo === undefined || explicitSolo === ""
+      ? (candidateVotes > listedVotes ? candidateVotes - listedVotes : 0n)
+      : BigInt(normalizeInteger(explicitSolo));
     const additions = allocateProRata(baseVotes, soloVotes);
     group.forEach((row, index) => output.push({ ...row, votes: baseVotes[index] + additions[index] }));
   }
   return output;
 }
 
-function allocateProRata(weights: bigint[], seats: bigint): bigint[] {
+export function allocateProRata(weights: bigint[], seats: bigint): bigint[] {
   const result = weights.map(() => 0n);
   if (seats <= 0n || weights.length === 0) return result;
   const total = weights.reduce((sum, value) => sum + value, 0n);
@@ -194,16 +240,12 @@ function allocateProRata(weights: bigint[], seats: bigint): bigint[] {
     return result;
   }
   let assigned = 0n;
-  const quotient = total / seats;
-  if (quotient <= 0n) {
-    result[0] = seats;
-    return result;
-  }
   const remainders = weights.map((weight, index) => {
-    const integer = weight / quotient;
+    const product = weight * seats;
+    const integer = product / total;
     result[index] = integer;
     assigned += integer;
-    return { index, remainder: weight % quotient, weight };
+    return { index, remainder: product % total, weight };
   });
   let remaining = seats - assigned;
   for (const item of remainders.sort((a, b) => {
@@ -246,6 +288,7 @@ function loadSingleMemberDistricts(
       chamber,
       regionId: regionId(constituencyName),
       constituencyId: constituencyId(chamber, constituencyName),
+      multiMemberDistrictId: districtId(chamber, districtRows[0]["COLLEGIO PLURINOMINALE"]),
       name: districtName,
       specialTerritory: specialTerritoryFromName(constituencyName),
       seats: 1
@@ -390,28 +433,45 @@ export function loadCandidateListFiles(cameraCsv?: string, senateCsv?: string): 
   nominations: CandidateNomination[];
 } {
   const rows = [
-    ...(cameraCsv ? parseDelimited(cameraCsv).map((row) => ({ row: row as CandidateListRow, chamber: "camera" as const })) : []),
-    ...(senateCsv ? parseDelimited(senateCsv).map((row) => ({ row: row as CandidateListRow, chamber: "senate" as const })) : [])
+    ...(cameraCsv ? parseDelimited(cameraCsv).map((row) => ({ row: normalizeCandidateListRow(row), chamber: "camera" as const })) : []),
+    ...(senateCsv ? parseDelimited(senateCsv).map((row) => ({ row: normalizeCandidateListRow(row), chamber: "senate" as const })) : [])
   ];
   const candidatesById = new Map<string, Candidate>();
   const nominations: CandidateNomination[] = [];
   const positions = new Map<string, number>();
+
+  const canonicalBirthDates = new Map<string, string>();
+  const birthDateCounts = new Map<string, Map<string, number>>();
+  for (const { row, chamber } of rows) {
+    const identityKey = proportionalIdentityKey(chamber, row);
+    const birthDate = normalizePersonPart(row.datanascita ?? "");
+    if (!identityKey || !birthDate) continue;
+    const counts = birthDateCounts.get(identityKey) ?? new Map<string, number>();
+    counts.set(birthDate, (counts.get(birthDate) ?? 0) + 1);
+    birthDateCounts.set(identityKey, counts);
+  }
+  for (const [identityKey, counts] of birthDateCounts) {
+    canonicalBirthDates.set(identityKey, [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0]);
+  }
 
   for (const { row, chamber } of rows) {
     const listName = normalizeListName(row.descrlista ?? "");
     const districtName = row.CollPlurinom ?? "";
     const lastName = normalizePersonPart(row.cognome ?? "");
     const firstName = normalizePersonPart(row.nome ?? "");
-    const birthDate = normalizePersonPart(row.datanascita ?? "");
+    const identityKey = proportionalIdentityKey(chamber, row);
+    const birthDate = canonicalBirthDates.get(identityKey) ?? normalizePersonPart(row.datanascita ?? "");
     if (!listName || !districtName || !lastName || !firstName) continue;
 
     const candidateId = candidateIdFor(chamber, listName, lastName, firstName, birthDate);
+    const conflicts = [...(birthDateCounts.get(identityKey)?.keys() ?? [])].filter((value) => value !== birthDate);
     candidatesById.set(candidateId, {
       id: candidateId,
       firstName,
       lastName,
       birthYear: parseBirthYear(birthDate),
-      party: listId(listName)
+      party: listId(listName),
+      identityConflicts: conflicts.length > 0 ? conflicts.map((value) => `datanascita:${value}`) : undefined
     });
     const rowDistrictId = districtId(chamber, districtName);
     const key = `${chamber}|${rowDistrictId}|${listId(listName)}`;
@@ -431,6 +491,14 @@ export function loadCandidateListFiles(cameraCsv?: string, senateCsv?: string): 
   return { candidates: [...candidatesById.values()], nominations };
 }
 
+function proportionalIdentityKey(chamber: Chamber, row: CandidateListRow): string {
+  const listName = normalizeListName(row.descrlista ?? "");
+  const lastName = normalizePersonPart(row.cognome ?? "");
+  const firstName = normalizePersonPart(row.nome ?? "");
+  if (!listName || !lastName || !firstName) return "";
+  return [chamber, listId(listName), normalizeKey(lastName), normalizeKey(firstName), normalizeKey(row.luogonascita ?? ""), normalizeKey(row.sesso ?? "")].join("|");
+}
+
 function parseBirthYear(value: string): number | undefined {
   const match = value.match(/\b(19|20)\d{2}\b/);
   return match ? Number(match[0]) : undefined;
@@ -440,19 +508,109 @@ function mergeCandidates(...groups: Candidate[][]): Candidate[] {
   return [...new Map(groups.flat().map((candidate) => [candidate.id, candidate])).values()];
 }
 
+function reconcileCandidateIdentities(
+  candidates: Candidate[],
+  nominations: CandidateNomination[],
+  lists: ElectionInput["lists"]
+): { candidates: Candidate[]; nominations: CandidateNomination[] } {
+  const candidatesById = new Map(candidates.map((candidate) => [candidate.id, candidate]));
+  const listById = new Map(lists.map((list) => [list.id, list]));
+  const proportionalByIdentity = new Map<string, Set<string>>();
+  for (const nomination of nominations) {
+    if (nomination.nominationType !== "multi-member") continue;
+    const candidate = candidatesById.get(nomination.candidateId);
+    if (!candidate) continue;
+    const key = `${nomination.chamber}|${personNameKey(candidate)}`;
+    const ids = proportionalByIdentity.get(key) ?? new Set<string>();
+    ids.add(candidate.id);
+    proportionalByIdentity.set(key, ids);
+  }
+
+  const replacement = new Map<string, string>();
+  for (const single of nominations.filter((nomination) => nomination.nominationType === "single-member")) {
+    const candidate = candidatesById.get(single.candidateId);
+    if (!candidate) continue;
+    const key = `${single.chamber}|${personNameKey(candidate)}`;
+    const compatible = [...(proportionalByIdentity.get(key) ?? [])].filter((candidateId) =>
+      nominations.some((nomination) => {
+        if (nomination.candidateId !== candidateId || nomination.nominationType !== "multi-member") return false;
+        const proportionalList = listById.get(nomination.listId);
+        return nomination.listId === single.listId ||
+          Boolean(single.connectedSubjectId && proportionalList?.coalitionId === single.connectedSubjectId);
+      })
+    );
+    if (compatible.length !== 1) continue;
+    replacement.set(compatible[0], single.candidateId);
+    const proportional = candidatesById.get(compatible[0]);
+    if (proportional) {
+      candidatesById.set(single.candidateId, {
+        ...candidate,
+        birthYear: proportional.birthYear,
+        identityConflicts: proportional.identityConflicts,
+        party: proportional.party ?? candidate.party
+      });
+    }
+  }
+
+  const reconciledNominations = nominations.map((nomination) => ({
+    ...nomination,
+    candidateId: replacement.get(nomination.candidateId) ?? nomination.candidateId
+  }));
+  return {
+    candidates: [...candidatesById.values()].filter((candidate) => !replacement.has(candidate.id)),
+    nominations: reconciledNominations
+  };
+}
+
+function normalizeCandidateListRow(row: Record<string, string>): CandidateListRow {
+  const fullName = normalizePersonPart(row.CANDIDATO ?? "");
+  const parts = fullName.split(/\s+/).filter(Boolean);
+  return {
+    CODTIPOELEZIONE: row.CODTIPOELEZIONE,
+    Circoscrizione: normalizeCandidateGeography(row.Circoscrizione ?? row.CIRCOSCRIZIONE),
+    Regione: normalizeCandidateGeography(row.Regione ?? row.REGIONE),
+    CollPlurinom: normalizeCandidateGeography(row.CollPlurinom ?? row.COLLEGIO_PLURINOMINALE ?? "") ?? "",
+    descrlista: normalizeCandidateGeography(row.descrlista ?? row.DESCR_LISTA) ?? "",
+    nome: row.nome ?? (parts.shift() ?? ""),
+    cognome: row.cognome ?? parts.join(" "),
+    datanascita: row.datanascita ?? row.DATA_NASCITA ?? "",
+    luogonascita: row.luogonascita ?? row.LUOGO_NASCITA ?? "",
+    sesso: row.sesso ?? "",
+    CODTIPOELETTO: row.CODTIPOELETTO
+  };
+}
+
+function normalizeCandidateGeography(value: string | undefined): string | undefined {
+  return value?.replace(/S.DTIROL/gi, "SUDTIROL");
+}
+
+function personNameKey(candidate: Candidate): string {
+  return [candidate.firstName, candidate.lastName]
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .replace(/\bDETT[OA]\s+[A-Z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .sort()
+    .join(" ");
+}
+
 function normalizeScrutiniRow(row: Record<string, string>): OnDataScrutiniRow {
   return {
-    cod: row.cod ?? "",
-    "TIPO ELEZIONE": row["TIPO ELEZIONE"] ?? "",
-    "COLLEGIO PLURINOMINALE": row["COLLEGIO PLURINOMINALE"] ?? "",
-    "COLLEGIO UNINOMINALE": row["COLLEGIO UNINOMINALE"] ?? "",
-    CIRCOSCRIZIONE: row.CIRCOSCRIZIONE ?? "",
+    cod: row.cod ?? row.COMUNE ?? "",
+    "TIPO ELEZIONE": row["TIPO ELEZIONE"] ?? row.CODTIPOELEZIONE ?? "",
+    "COLLEGIO PLURINOMINALE": row["COLLEGIO PLURINOMINALE"] ?? row.COLLPLURI ?? "",
+    "COLLEGIO UNINOMINALE": row["COLLEGIO UNINOMINALE"] ?? row.COLLUNINOM ?? "",
+    CIRCOSCRIZIONE: row.CIRCOSCRIZIONE ?? row["CIRC-REG"] ?? "",
     COGNOME: row.COGNOME ?? "",
     NOME: row.NOME ?? "",
-    LISTA: normalizeListName(row.LISTA ?? ""),
-    "VOTI CANDIDATO": row["VOTI CANDIDATO"] ?? "0",
-    "VOTI SOLO CANDIDATO": row["VOTI SOLO CANDIDATO"] ?? "0",
-    "VOTI LISTE": row["VOTI LISTE"] ?? "0"
+    LISTA: normalizeListName(row.LISTA ?? row.DESCRLISTA ?? ""),
+    "VOTI CANDIDATO": row["VOTI CANDIDATO"] ?? row.VOTICANDIDATO ?? "0",
+    "VOTI SOLO CANDIDATO": row["VOTI SOLO CANDIDATO"],
+    "VOTI LISTE": row["VOTI LISTE"] ?? row.VOTILISTA ?? "0"
   };
 }
 
@@ -488,7 +646,7 @@ function regionId(name: string): string {
 }
 
 function normalizeKey(value: string): string {
-  return value.replace(/\s+/g, " ").trim().toUpperCase();
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
 }
 
 function titleFromListId(id: string): string {
@@ -531,7 +689,7 @@ function normalizePersonPart(value: string): string {
 
 function minorityMetadata(name: string) {
   if (normalizeKey(name).includes("SUDTIROLER VOLKSPARTEI")) {
-    return { isLinguisticMinority: true, protectedRegionId: "trentino-alto-adige" };
+    return { isLinguisticMinority: true, protectedRegionId: "trentino-alto-adige-sudtirol" };
   }
   return {};
 }
@@ -543,7 +701,7 @@ function specialTerritoryFromName(name: string): "valle-aosta" | "trentino-alto-
   return undefined;
 }
 
-function rosatellum2022DistrictSeatCapacity(districtId: string): { withBonus: number; withoutBonus: number } | undefined {
+export function rosatellum2022DistrictSeatCapacity(districtId: string): { withBonus: number; withoutBonus: number } | undefined {
   const seats = rosatellum2022DistrictSeats[districtId];
   return seats === undefined ? undefined : { withBonus: seats, withoutBonus: seats };
 }
@@ -551,50 +709,50 @@ function rosatellum2022DistrictSeatCapacity(districtId: string): { withBonus: nu
 const rosatellum2022DistrictSeats: Record<string, number> = {
   "camera-abruzzo-p01": 6,
   "camera-basilicata-p01": 3,
-  "camera-calabria-p01": 7,
-  "camera-campania-1-p01": 5,
-  "camera-campania-1-p02": 6,
+  "camera-calabria-p01": 8,
+  "camera-campania-1-p01": 6,
+  "camera-campania-1-p02": 7,
   "camera-campania-2-p01": 5,
   "camera-campania-2-p02": 6,
   "camera-emilia-romagna-p01": 5,
-  "camera-emilia-romagna-p02": 8,
-  "camera-emilia-romagna-p03": 5,
+  "camera-emilia-romagna-p02": 7,
+  "camera-emilia-romagna-p03": 6,
   "camera-friuli-venezia-giulia-p01": 5,
   "camera-lazio-1-p01": 5,
-  "camera-lazio-1-p02": 6,
-  "camera-lazio-1-p03": 4,
-  "camera-lazio-2-p01": 2,
-  "camera-lazio-2-p02": 6,
+  "camera-lazio-1-p02": 5,
+  "camera-lazio-1-p03": 5,
+  "camera-lazio-2-p01": 3,
+  "camera-lazio-2-p02": 4,
   "camera-liguria-p01": 6,
   "camera-lombardia-1-p01": 8,
-  "camera-lombardia-1-p02": 9,
-  "camera-lombardia-2-p01": 3,
-  "camera-lombardia-2-p02": 7,
-  "camera-lombardia-3-p01": 3,
-  "camera-lombardia-3-p02": 6,
-  "camera-lombardia-4-p01": 8,
+  "camera-lombardia-1-p02": 8,
+  "camera-lombardia-2-p01": 4,
+  "camera-lombardia-2-p02": 5,
+  "camera-lombardia-3-p01": 4,
+  "camera-lombardia-3-p02": 5,
+  "camera-lombardia-4-p01": 7,
   "camera-marche-p01": 6,
   "camera-molise-p01": 1,
-  "camera-piemonte-1-p01": 6,
-  "camera-piemonte-1-p02": 4,
-  "camera-piemonte-2-p01": 2,
-  "camera-piemonte-2-p02": 7,
-  "camera-puglia-p01": 3,
-  "camera-puglia-p02": 3,
+  "camera-piemonte-1-p01": 5,
+  "camera-piemonte-1-p02": 5,
+  "camera-piemonte-2-p01": 4,
+  "camera-piemonte-2-p02": 5,
+  "camera-puglia-p01": 4,
+  "camera-puglia-p02": 4,
   "camera-puglia-p03": 4,
-  "camera-puglia-p04": 7,
+  "camera-puglia-p04": 5,
   "camera-sardegna-p01": 7,
   "camera-sicilia-1-p01": 5,
   "camera-sicilia-1-p02": 4,
   "camera-sicilia-2-p01": 3,
-  "camera-sicilia-2-p02": 5,
-  "camera-sicilia-2-p03": 3,
+  "camera-sicilia-2-p02": 4,
+  "camera-sicilia-2-p03": 4,
   "camera-toscana-p01": 5,
-  "camera-toscana-p02": 4,
-  "camera-toscana-p03": 6,
+  "camera-toscana-p02": 5,
+  "camera-toscana-p03": 5,
   "camera-trentino-alto-adige-sudtirol-p01": 3,
   "camera-umbria-p01": 4,
-  "camera-veneto-1-p01": 7,
+  "camera-veneto-1-p01": 8,
   "camera-veneto-2-p01": 4,
   "camera-veneto-2-p02": 5,
   "camera-veneto-2-p03": 3,
@@ -603,25 +761,25 @@ const rosatellum2022DistrictSeats: Record<string, number> = {
   "senate-calabria-p01": 4,
   "senate-campania-p01": 6,
   "senate-campania-p02": 5,
-  "senate-emilia-romagna-p01": 3,
-  "senate-emilia-romagna-p02": 6,
+  "senate-emilia-romagna-p01": 4,
+  "senate-emilia-romagna-p02": 5,
   "senate-friuli-venezia-giulia-p01": 3,
   "senate-lazio-p01": 6,
   "senate-lazio-p02": 6,
   "senate-liguria-p01": 3,
   "senate-lombardia-p01": 6,
-  "senate-lombardia-p02": 9,
-  "senate-lombardia-p03": 5,
+  "senate-lombardia-p02": 8,
+  "senate-lombardia-p03": 6,
   "senate-marche-p01": 3,
   "senate-molise-p01": 1,
   "senate-piemonte-p01": 4,
   "senate-piemonte-p02": 5,
   "senate-puglia-p01": 8,
   "senate-sardegna-p01": 3,
-  "senate-sicilia-p01": 6,
-  "senate-sicilia-p02": 4,
+  "senate-sicilia-p01": 5,
+  "senate-sicilia-p02": 5,
   "senate-toscana-p01": 8,
   "senate-umbria-p01": 2,
-  "senate-veneto-p01": 4,
-  "senate-veneto-p02": 7
+  "senate-veneto-p01": 5,
+  "senate-veneto-p02": 6
 };

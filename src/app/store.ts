@@ -8,6 +8,7 @@ import senateCandidateListUrl from "../../data/input/senato-2022-candlista.csv?u
 import senateScrutiniUrl from "../../data/input/Politiche2022_Scrutini_Senato_Italia.csv?url";
 import bonusCandidateListsUrl from "../../data/input/bonus-candidates-2022-random.csv?url";
 import foreignElectionUrl from "../../data/input/estero.json?url";
+import specialTerritoriesUrl from "../../data/input/special-territories-2022.json?url";
 
 type AppState = {
   scenario?: ElectionInput;
@@ -27,14 +28,15 @@ export const useAppStore = create<AppState>((set) => ({
     set(bundle);
   },
   loadFixture: async () => {
-    const [cameraScrutiniCsv, senateScrutiniCsv, bonusCandidateListsCsv, cameraCandidateListCsv, senateCandidateListCsv, foreignElectionJson] =
+    const [cameraScrutiniCsv, senateScrutiniCsv, bonusCandidateListsCsv, cameraCandidateListCsv, senateCandidateListCsv, foreignElectionJson, specialTerritoriesJson] =
       await Promise.all([
         fetchText(cameraScrutiniUrl),
         fetchText(senateScrutiniUrl),
         fetchText(bonusCandidateListsUrl),
         fetchText(cameraCandidateListUrl),
         fetchText(senateCandidateListUrl),
-        fetchText(foreignElectionUrl)
+        fetchText(foreignElectionUrl),
+        fetchText(specialTerritoriesUrl)
       ]);
     const bundle = await loadOnDataInWorker({
       cameraScrutiniCsv,
@@ -42,7 +44,8 @@ export const useAppStore = create<AppState>((set) => ({
       bonusCandidateListsCsv,
       cameraCandidateListCsv,
       senateCandidateListCsv,
-      foreignElectionJson
+      foreignElectionJson,
+      specialTerritoriesJson
     });
     set(bundle);
   }

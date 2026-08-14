@@ -48,6 +48,8 @@ export type SingleMemberDistrict = {
   chamber: Chamber;
   regionId: string;
   constituencyId?: string;
+  /** Plurinominal college containing this uninominal college, when known. */
+  multiMemberDistrictId?: string;
   name: string;
   specialTerritory?: "valle-aosta" | "trentino-alto-adige";
   seats: 1;
@@ -60,6 +62,7 @@ export type Candidate = {
   age?: number;
   birthYear?: number;
   party?: string;
+  identityConflicts?: string[];
 };
 
 export type CandidateNomination = {
@@ -110,6 +113,8 @@ export type ElectionInput = {
   nominations?: CandidateNomination[];
   bonusCandidateLists?: BonusCandidatePriority[];
   foreignElection: ForeignElectionData;
+  /** Non-blocking import coverage notices surfaced in the calculation trace. */
+  coverageWarnings?: string[];
 };
 
 export type AllocationSubject = {
@@ -167,6 +172,33 @@ export type TerritorialSeatResult = {
     | "special-local-proportional";
   territoryId: string;
   seats: Record<string, number>;
+  allocationLedger?: AllocationLedger;
+};
+
+export type AllocationLedgerCell = {
+  territoryId: string;
+  subjectId: string;
+  votes: bigint;
+  quotient: bigint;
+  integerSeats: number;
+  remainder: bigint;
+  remainderInitiallyUsed: boolean;
+  /** Whether this remainder is occupied after every statutory compensation. */
+  remainderUsed: boolean;
+};
+
+export type AllocationTransfer = {
+  fromTerritoryId: string;
+  fromSubjectId: string;
+  toTerritoryId: string;
+  toSubjectId: string;
+  reason: string;
+};
+
+export type AllocationLedger = {
+  stage: string;
+  cells: AllocationLedgerCell[];
+  transfers: AllocationTransfer[];
 };
 
 export type MunicipalityPopulation = {
@@ -223,7 +255,17 @@ export type ElectionSimulationResult = {
   foreignResults: Record<ForeignChamberId, ForeignChamberResult | undefined>;
   territorialResults: TerritorialSeatResult[];
   electedCandidates: ElectedCandidate[];
+  allElectedCandidates: UnifiedElectedMember[];
   seatTrace: SeatAssignmentTrace[];
   trace: CalculationTraceEntry[];
   ties: TieResolutionRequired[];
+};
+
+export type UnifiedElectedMember = {
+  chamber: Chamber;
+  electionType: "single-member" | "plurinominal" | "foreign";
+  territory: string;
+  listId: string;
+  candidateId: string;
+  displayName: string;
 };

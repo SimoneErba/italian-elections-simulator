@@ -1,0 +1,16 @@
+{
+  "source": {
+    "senate": "https://www.senato.it/leg/19/Elettorale/riepilogo.htm",
+    "valleDAosta": "https://www.regione.vda.it/amministrazione/Elezioni/Dati_e_risultati/elezioni/Mobile/Default_i.aspx?idele=168"
+  },
+  "districts": [
+    { "chamber": "camera", "region": "VALLE D'AOSTA", "district": "VALLE D'AOSTA - U01 (AOSTA)", "winner": { "firstName": "FRANCO", "lastName": "MANES", "votes": "20763", "listName": "VALLEE D'AOSTE - AUTONOMIE PROGRES FEDERALISME" } },
+    { "chamber": "senate", "region": "VALLE D'AOSTA", "district": "VALLE D'AOSTA - U01 (AOSTA)", "winner": { "firstName": "NICOLETTA", "lastName": "SPELGATTI", "votes": "18509", "listName": "LEGA - FI - NOI MODERATI - FDI" } },
+    { "chamber": "senate", "region": "TRENTINO-ALTO ADIGE/SUDTIROL", "district": "TRENTINO-ALTO ADIGE/SUDTIROL - U01 (TRENTO)", "winner": { "firstName": "PIETRO", "lastName": "PATTON", "votes": "48021", "listName": "ALLEANZA DEMOCRATICA PER L'AUTONOMIA" } },
+    { "chamber": "senate", "region": "TRENTINO-ALTO ADIGE/SUDTIROL", "district": "TRENTINO-ALTO ADIGE/SUDTIROL - U02 (ROVERETO)", "winner": { "firstName": "MICHAELA", "lastName": "BIANCOFIORE", "votes": "33601", "listName": "LEGA - FI - NOI MODERATI - FDI" } },
+    { "chamber": "senate", "region": "TRENTINO-ALTO ADIGE/SUDTIROL", "district": "TRENTINO-ALTO ADIGE/SUDTIROL - U03 (PERGINE VALSUGANA)", "winner": { "firstName": "ELENA", "lastName": "TESTOR", "votes": "27364", "listName": "LEGA - FI - NOI MODERATI - FDI" } },
+    { "chamber": "senate", "region": "TRENTINO-ALTO ADIGE/SUDTIROL", "district": "TRENTINO-ALTO ADIGE/SUDTIROL - U04 (BOLZANO/BOZEN)", "winner": { "firstName": "LUIGI", "lastName": "SPAGNOLLI", "votes": "21936", "listName": "DEMOCRAZIA AMBIENTE FUTURO" } },
+    { "chamber": "senate", "region": "TRENTINO-ALTO ADIGE/SUDTIROL", "district": "TRENTINO-ALTO ADIGE/SUDTIROL - U05 (MERANO/MERAN)", "winner": { "firstName": "JULIANE", "lastName": "UNTERBERGER", "votes": "30747", "listName": "SUDTIROLER VOLKSPARTEI (SVP) - PATT" } },
+    { "chamber": "senate", "region": "TRENTINO-ALTO ADIGE/SUDTIROL", "district": "TRENTINO-ALTO ADIGE/SUDTIROL - U06 (BRESSANONE/BRIXEN)", "winner": { "firstName": "MEINHARD", "lastName": "DURNWALDER", "votes": "39024", "listName": "SUDTIROLER VOLKSPARTEI (SVP) - PATT" } }
+  ]
+}

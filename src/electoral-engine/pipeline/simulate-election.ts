@@ -16,6 +16,7 @@ import {
 } from "../population/bonus-seat-allocation";
 import { determineBonus } from "../rules/ac-2822-a/bonus";
 import { getLawVersion } from "../rules/registry";
+import { simulateRosatellum2022 } from "../rules/rosatellum-2022/simulate";
 
 export function simulateElection(input: ElectionInput): ElectionSimulationResult {
   const validation = validateInput(input);
@@ -30,11 +31,14 @@ export function simulateElection(input: ElectionInput): ElectionSimulationResult
       bonusSeatAllocations: { camera: undefined, senate: undefined },
       territorialResults: [],
       electedCandidates: [],
+      allElectedCandidates: [],
       seatTrace: [],
       trace,
       ties: []
     };
   }
+
+  if (input.lawVersion === "rosatellum-2022") return simulateRosatellum2022(input);
 
   const law = getLawVersion(input.lawVersion);
   const votes = aggregateVotes(input);
@@ -225,6 +229,7 @@ export function simulateElection(input: ElectionInput): ElectionSimulationResult
     foreignResults,
     territorialResults,
     electedCandidates: candidates.elected,
+    allElectedCandidates: [],
     seatTrace,
     trace,
     ties: allTies
