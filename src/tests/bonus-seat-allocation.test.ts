@@ -122,6 +122,7 @@ describe("population-derived bonus seat allocation", () => {
 
     expect(getElectoralPopulationDatasetEffectiveOn("2026-07-16").id).toBe("electoral-population-2021");
     expect(getElectoralPopulationDatasetEffectiveOn("2027-01-01").id).toBe("electoral-population-2021");
+    expect(getElectoralPopulationDatasetEffectiveOn("2022-09-25").id).toBe("electoral-population-2021");
     expect(getElectoralPopulationDatasetEffectiveOn("2027-03-01", futureRegistry).id).toBe("electoral-population-2026-active");
   });
 });

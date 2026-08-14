@@ -1,5 +1,6 @@
 import type { Chamber } from "../../electoral-engine/domain/chamber";
-import type { BonusCandidatePriority, Candidate, CandidateNomination, ElectionInput } from "../../electoral-engine/domain/election";
+import type { BonusCandidatePriority, Candidate, CandidateNomination, ElectoralLawVersionId, ElectionInput } from "../../electoral-engine/domain/election";
+import { officialDistrictSeatCapacity } from "../../electoral-engine/rules/ac-2822-a/territorial-seats";
 import type { ForeignElectionData } from "../../lib/elections/estero";
 import { foreignElectionDataSchema } from "../schemas/election-input-schema";
 import { normalizeInteger, normalizeListName, parseDelimited, slug, unique } from "./csv";
@@ -161,6 +162,36 @@ export function loadOnData2022Scenario(files: OnDataImportFiles): ElectionInput 
     bonusCandidateLists: bonusCandidateBundle.priorities.length > 0 ? bonusCandidateBundle.priorities : undefined,
     foreignElection: loadForeignElectionJson(files.foreignElectionJson),
     coverageWarnings: special ? undefined : ["Copertura territoriale incompleta: manca il file speciale 2022 per Valle d'Aosta e Senato Trentino-Alto Adige/Südtirol."]
+  };
+}
+
+/**
+ * The 2022 source files identify the same geographic districts used by the
+ * 2026 simulation, but their Rosatellum seat capacities are different. Keep
+ * the raw import faithful to 2022, then adapt only the 2026 simulation copy.
+ */
+export function withLawSpecificDistrictSeats(
+  scenario: ElectionInput,
+  lawVersion: ElectoralLawVersionId
+): ElectionInput {
+  if (lawVersion !== "ac-2822-a-2026-07-16") return { ...scenario, lawVersion };
+
+  return {
+    ...scenario,
+    lawVersion,
+    multiMemberDistricts: scenario.multiMemberDistricts.map((district) => {
+      const capacity = officialDistrictSeatCapacity(district.id);
+      if (capacity) {
+        return { ...district, seatsWithBonus: capacity.withBonus, seatsWithoutBonus: capacity.withoutBonus };
+      }
+      // The 2026 table treats the Trentino-Alto Adige Camera district as a
+      // special territory (three local proportional seats); it is therefore
+      // outside the national 314-seat validation pool.
+      if (district.chamber === "camera" && district.regionId.includes("trentino-alto-adige")) {
+        return { ...district, specialTerritory: "trentino-alto-adige" as const };
+      }
+      return district;
+    })
   };
 }
 

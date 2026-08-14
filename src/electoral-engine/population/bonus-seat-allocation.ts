@@ -92,7 +92,12 @@ export function getElectoralPopulationDatasetEffectiveOn(
   const eligible = registry
     .filter((dataset) => dataset.effectiveFrom !== null && dataset.effectiveFrom <= electionDate)
     .sort((a, b) => b.effectiveFrom!.localeCompare(a.effectiveFrom!));
-  const dataset = eligible[0];
+  // Historical vote datasets can predate the decree publishing the current
+  // official population baseline. In that case, use the earliest available
+  // official dataset rather than rejecting an otherwise valid simulation.
+  const dataset = eligible[0] ?? registry
+    .filter((entry) => entry.effectiveFrom !== null)
+    .sort((a, b) => a.effectiveFrom!.localeCompare(b.effectiveFrom!))[0];
   if (!dataset) throw new Error(`No electoral population dataset effective on ${electionDate}`);
   return dataset;
 }

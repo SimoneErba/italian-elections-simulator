@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Chamber } from "../electoral-engine/domain/chamber";
-import { loadBonusCandidateListsCsv, loadOnData2022Scenario as loadOnData2022ScenarioRaw, type OnDataImportFiles } from "../datasets/loaders/ondata-2022-loader";
+import { loadBonusCandidateListsCsv, loadOnData2022Scenario as loadOnData2022ScenarioRaw, type OnDataImportFiles, withLawSpecificDistrictSeats } from "../datasets/loaders/ondata-2022-loader";
 import { simulateElection } from "../electoral-engine/pipeline/simulate-election";
+import { validateInput } from "../electoral-engine/pipeline/validate-input";
 import { defaultForeignElection2022 } from "../lib/elections/estero";
 
 const cameraCsv = `cod,COMUNE,TIPO ELEZIONE,DATA ELEZIONE,COLLEGIO PLURINOMINALE,COLLEGIO UNINOMINALE,CIRCOSCRIZIONE,NAZIONE,PROVINCIA,COGNOME,NOME,ALTRO NOME,LISTA,VOTANTI TOTALI,ELETTORI TOTALI,VOTI CANDIDATO,VOTI SOLO CANDIDATO,VOTI LISTE,SCHEDE BIANCHE,SCHEDE CONTESTATE,SCHEDE NULLE,CODICE ISTAT
@@ -255,6 +256,24 @@ camera,coalition-a,candidate-b,3,Rossi,Maria`);
     for (const candidateId of electedIds) {
       expect(scenario.nominations?.some((nomination) => nomination.candidateId === candidateId)).toBe(true);
     }
+  });
+
+  it("uses the 2026 district seat table when simulating the bundled 2022 data", () => {
+    const scenario = loadOnData2022Scenario({
+      cameraScrutiniCsv: readFixture("Politiche2022_Scrutini_Camera_Italia.csv"),
+      senateScrutiniCsv: readFixture("Politiche2022_Scrutini_Senato_Italia.csv"),
+      bonusCandidateListsCsv: readFixture("bonus-candidates-2022-random.csv"),
+      cameraCandidateListCsv: readFixture("camera-2022-candidatilista.csv"),
+      senateCandidateListCsv: readFixture("senato-2022-candlista.csv"),
+      foreignElectionJson: readFixture("estero.json"),
+      specialTerritoriesJson: readFixture("special-territories-2022.json")
+    });
+
+    const validation = validateInput(withLawSpecificDistrictSeats(scenario, "ac-2822-a-2026-07-16"));
+
+    expect(withLawSpecificDistrictSeats(scenario, "ac-2822-a-2026-07-16").electionDate).toBe("2022-09-25");
+    expect(validation.ok).toBe(true);
+    expect(validation.trace.some((entry) => entry.level === "blocking")).toBe(false);
   });
 });
 

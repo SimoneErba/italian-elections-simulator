@@ -1,7 +1,7 @@
 import type { ElectoralLawVersionId, ElectionInput, ElectionSimulationResult } from "../electoral-engine/domain/election";
 import { simulateElection } from "../electoral-engine/pipeline/simulate-election";
 import type { OnDataImportFiles } from "../datasets/loaders/ondata-2022-loader";
-import { loadOnData2022Scenario } from "../datasets/loaders/ondata-2022-loader";
+import { loadOnData2022Scenario, withLawSpecificDistrictSeats } from "../datasets/loaders/ondata-2022-loader";
 
 export type SimulationWorkerRequest =
   | { id: number; kind: "scenario"; scenario: ElectionInput; lawVersions: ElectoralLawVersionId[] }
@@ -17,7 +17,7 @@ self.onmessage = (event: MessageEvent<SimulationWorkerRequest>) => {
     const scenario = request.kind === "scenario" ? request.scenario : loadOnData2022Scenario(request.files);
     const results = Object.fromEntries(request.lawVersions.map((lawVersion) => [
       lawVersion,
-      simulateElection({ ...scenario, lawVersion })
+      simulateElection(withLawSpecificDistrictSeats(scenario, lawVersion))
     ])) as Partial<Record<ElectoralLawVersionId, ElectionSimulationResult>>;
     const response: SimulationWorkerResponse = {
       id: request.id,
