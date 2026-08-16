@@ -21,6 +21,12 @@
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+html {
+  /* Reserve the scrollbar track so content remains aligned as pages grow. */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 [data-theme="dark"] {
   --background: #11171b;
   --surface: #182127;
@@ -127,6 +133,10 @@ button:disabled {
   padding: 2rem;
 }
 
+.appShell.comparisonLayout {
+  max-width: 1800px;
+}
+
 .topbar {
   margin-bottom: 1.5rem;
 }
@@ -167,21 +177,142 @@ h1 {
   font-size: 2rem;
 }
 
-.actions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem;
-  justify-content: space-between;
-  margin-top: 1rem;
-  width: 100%;
+.simulationSetup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 1.5rem;
+  overflow: hidden;
 }
 
-.primaryActions {
-  align-items: center;
+.setupHeading {
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+  padding: 1.4rem;
+}
+
+.setupEyebrow {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.setupHeading h2 {
+  font-size: 1.35rem;
+}
+
+.setupHeading > p:last-child,
+.setupStep p,
+.demoAlternative p {
+  color: var(--muted);
+  margin: 0.45rem 0 0;
+}
+
+.setupSteps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.setupActions {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.setupActions > p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.simulationCtas {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.75rem;
+}
+
+.customDataSetup {
+  border-top: 1px solid var(--border);
+}
+
+.setupStep {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 230px;
+  padding: 1.25rem;
+}
+
+.setupStep:last-child {
+  border-right: 0;
+}
+
+.setupStep h3,
+.dataGuide h3 {
+  font-size: 1rem;
+}
+
+.setupStep p {
+  flex: 1;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.setupStep button,
+.setupStep .fileButton {
+  align-self: flex-start;
+}
+
+.dataGuide {
+  border-top: 1px solid var(--border);
+  padding: 1.25rem;
+}
+
+.dataGuide summary {
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.dataGuide dl {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0.9rem 0 0;
+}
+
+.dataGuide dl > div {
+  border-left: 3px solid var(--primary);
+  padding-left: 0.7rem;
+}
+
+.dataGuide dt {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.dataGuide dd {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0.25rem 0 0;
+}
+
+.demoAlternative {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+}
+
+.demoAlternative p {
+  margin: 0;
 }
 
 .alert {
@@ -307,41 +438,64 @@ h1 {
   border: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin: 1rem 0 0;
+  gap: 0.45rem;
+  margin: 0;
   padding: 0;
 }
 
 .lawModePicker legend {
+  flex-basis: 100%;
   font-weight: 800;
-  padding: 0;
+  margin-bottom: 0.4rem;
+  padding: 0 0.1rem;
 }
 
 .lawModePicker label {
   align-items: center;
-  cursor: pointer;
-  display: inline-flex;
-  gap: 0.35rem;
-}
-
-.bonusFileNote {
-  color: var(--muted);
-  font-size: 0.9rem;
-  margin: 0.65rem 0 0;
-}
-
-.comparisonResults {
-  align-items: start;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.comparisonColumn {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.92rem;
+  font-weight: 700;
+  gap: 0.45rem;
+  padding: 0.42rem 0.7rem;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.lawModePicker label:hover {
+  background: var(--surface-muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.lawModePicker label:has(input:checked) {
+  background: var(--surface-muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.lawModePicker input {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+  height: 0.9rem;
+  margin: 0;
+  width: 0.9rem;
+}
+
+.lawModePicker input:checked {
+  background: var(--primary);
+  border: 3px solid var(--surface-muted);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.lawModePicker input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .comparisonTitle {
@@ -349,10 +503,26 @@ h1 {
   margin: 0 0 1rem;
 }
 
-@media (max-width: 900px) {
-  .comparisonResults {
-    grid-template-columns: 1fr;
-  }
+.comparisonResults {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto repeat(6, auto);
+}
+
+.comparisonColumn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  padding: 1rem;
+  grid-row: span 7;
+  grid-template-rows: subgrid;
+}
+
+.comparisonColumn > .resultCards {
+  display: contents;
 }
 
 .resultCard {
@@ -858,6 +1028,23 @@ th {
   padding-left: 1.2rem;
 }
 
+.bonusLimitNotice {
+  background: var(--surface-muted);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  padding: 0.85rem;
+}
+
+.bonusLimitNotice h3,
+.bonusLimitNotice p {
+  margin: 0;
+}
+
+.bonusLimitNotice h3 {
+  font-size: 1rem;
+  margin-bottom: 0.35rem;
+}
+
 .bonusReport {
   display: grid;
   gap: 1rem;
@@ -944,13 +1131,30 @@ th {
     padding: 1rem;
   }
 
+  .comparisonResults,
+  .setupSteps,
+  .dataGuide dl {
+    grid-template-columns: 1fr;
+  }
+
   .chamberHeader {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .primaryActions {
-    flex: 1 1 100%;
+  .setupStep {
+    border-bottom: 1px solid var(--border);
+    border-right: 0;
+    min-height: 0;
+  }
+
+  .setupStep:last-child {
+    border-bottom: 0;
+  }
+
+  .demoAlternative {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .topbarHeader {

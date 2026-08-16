@@ -250,7 +250,7 @@ camera,coalition-a,candidate-b,3,Rossi,Maria`);
     // This simulator instead proclaims candidates from its calculated territorial
     // allocations, so the two lists are not an identity assertion. Keep this as
     // a regression check for a complete, non-duplicated domestic proclamation.
-    expect(result.electedCandidates).toHaveLength(579);
+    expect(result.electedCandidates).toHaveLength(580);
     const electedIds = result.electedCandidates.map((candidate) => candidate.candidateId);
     expect(new Set(electedIds).size).toBe(electedIds.length);
     for (const candidateId of electedIds) {
@@ -275,6 +275,46 @@ camera,coalition-a,candidate-b,3,Rossi,Maria`);
     expect(validation.ok).toBe(true);
     expect(validation.trace.some((entry) => entry.level === "blocking")).toBe(false);
   });
+
+  it("simulates the bundled data with the 2026 law", () => {
+    const scenario = loadOnData2022Scenario({
+      cameraScrutiniCsv: readFixture("Politiche2022_Scrutini_Camera_Italia.csv"),
+      senateScrutiniCsv: readFixture("Politiche2022_Scrutini_Senato_Italia.csv"),
+      bonusCandidateListsCsv: readFixture("bonus-candidates-2022-random.csv"),
+      cameraCandidateListCsv: readFixture("camera-2022-candidatilista.csv"),
+      senateCandidateListCsv: readFixture("senato-2022-candlista.csv"),
+      foreignElectionJson: readFixture("estero.json"),
+      specialTerritoriesJson: readFixture("special-territories-2022.json")
+    });
+
+    const result = simulateElection(withLawSpecificDistrictSeats(scenario, "ac-2822-a-2026-07-16"));
+
+    expect(result.trace.some((entry) => entry.level === "blocking")).toBe(false);
+    expect(result.nationalResults.camera).toBeDefined();
+    expect(result.electedCandidates).toHaveLength(588);
+    expect(result.foreignResults.camera?.electedCandidates).toHaveLength(8);
+    expect(result.foreignResults.senato?.electedCandidates).toHaveLength(4);
+  });
+
+  it("retains Rosatellum's ordinary uninominal seats alongside the special territories", () => {
+    const scenario = loadOnData2022Scenario({
+      cameraScrutiniCsv: readFixture("Politiche2022_Scrutini_Camera_Italia.csv"),
+      senateScrutiniCsv: readFixture("Politiche2022_Scrutini_Senato_Italia.csv"),
+      bonusCandidateListsCsv: readFixture("bonus-candidates-2022-random.csv"),
+      cameraCandidateListCsv: readFixture("camera-2022-candidatilista.csv"),
+      senateCandidateListCsv: readFixture("senato-2022-candlista.csv"),
+      foreignElectionJson: readFixture("estero.json"),
+      specialTerritoriesJson: readFixture("special-territories-2022.json")
+    });
+
+    const result = simulateElection(scenario);
+
+    expect(totalSeats(result.nationalResults.camera?.seats)).toBe(392);
+    expect(totalSeats(result.nationalResults.senate?.seats)).toBe(196);
+    expect(result.electedCandidates).toHaveLength(588);
+    expect(result.foreignResults.camera?.electedCandidates).toHaveLength(8);
+    expect(result.foreignResults.senato?.electedCandidates).toHaveLength(4);
+  });
 });
 
 function readFixture(name: string): string {
@@ -296,4 +336,8 @@ function proportionalListSeats(seatTrace: Array<{ allocationStage: string; chamb
     totals[trace.chamber][trace.partyId] = (totals[trace.chamber][trace.partyId] ?? 0) + 1;
   }
   return totals;
+}
+
+function totalSeats(seats: Record<string, number> | undefined): number {
+  return Object.values(seats ?? {}).reduce((sum, seats) => sum + seats, 0);
 }

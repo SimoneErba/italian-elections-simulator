@@ -15,7 +15,14 @@ export function allocateSpecialTerritories(input: ElectionInput): SpecialTerrito
   const seatTrace: SeatAssignmentTrace[] = [];
   const ties: TieResolutionRequired[] = [];
 
-  for (const district of input.singleMemberDistricts ?? []) {
+  // AC 2822-A has no ordinary uninominal seats. The source data still
+  // contains Rosatellum's uninominal colleges, so its simulation must retain
+  // them while the 2026 simulation carries forward only designated special
+  // territories.
+  const districts = input.lawVersion === "rosatellum-2022"
+    ? input.singleMemberDistricts ?? []
+    : (input.singleMemberDistricts ?? []).filter((item) => item.specialTerritory);
+  for (const district of districts) {
     const votes = (input.candidateVotes ?? []).filter((vote) => vote.chamber === district.chamber && vote.districtId === district.id);
     if (votes.length === 0) continue;
     const sorted = [...votes].sort((a, b) => {

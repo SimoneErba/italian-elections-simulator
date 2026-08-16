@@ -21,7 +21,12 @@ export function electCandidates(
   const seatTrace: SeatAssignmentTrace[] = [];
   const ties: TieResolutionRequired[] = [];
   const proportionalDemands: ProportionalSeatDemand[] = [];
-  const expandedDistrictSeats = expandCoalitionDistrictSeats(input, territorialResults, thresholds);
+  // AC 2822-A's territorial allocation has already fixed each coalition's
+  // district capacity. Expand those coalition seats locally. The Rosatellum
+  // proclamation needs its separate cross-district recovery allocation.
+  const expandedDistrictSeats = input.lawVersion === "ac-2822-a-2026-07-16"
+    ? expandDistrictCoalitionSeatsLocally(input, territorialResults, thresholds)
+    : expandCoalitionDistrictSeats(input, territorialResults, thresholds);
   ties.push(...expandedDistrictSeats.ties);
   const orderedResults = [
     ...territorialResults.filter(isBonusResult),
@@ -110,11 +115,9 @@ export function electCandidates(
     }
   }
 
-  // The legacy AC pipeline only uses its historic local-list behaviour when
-  // invoked without threshold results (small callers/tests).  Rosatellum's
-  // statutory cross-district recovery is implemented by its dedicated
-  // proclamation module.
-  const proportional = assignProportionalCandidates(input, proportionalDemands, electedByCandidate, Boolean(thresholds));
+  // If a district list is exhausted, use the statutory replacement chain to
+  // keep the allocation's seat count intact.
+  const proportional = assignProportionalCandidates(input, proportionalDemands, electedByCandidate, true);
   elected.push(...proportional.elected);
   seatTrace.push(...proportional.seatTrace);
   ties.push(...proportional.ties);
@@ -151,7 +154,13 @@ function assignProportionalCandidates(
   const ties: TieResolutionRequired[] = [];
   const allDemands = [...demands];
 
-  const fill = (demand: ProportionalSeatDemand) => {
+  // A candidate can displace an earlier proclamation, which in turn needs a
+  // replacement.  The full 2026 data can create a chain longer than the JS
+  // call stack, so process that depth-first work with an explicit stack.
+  const pendingDemands = [...demands].reverse();
+  while (pendingDemands.length > 0) {
+    const demand = pendingDemands.pop()!;
+    let fulfilledOrDeferred = false;
     while (demand.nextIndex < demand.nominations.length) {
       const nomination = demand.nominations[demand.nextIndex];
       demand.nextIndex += 1;
@@ -160,7 +169,8 @@ function assignProportionalCandidates(
         const assignment = createProportionalAssignment(demand, nomination);
         electedByCandidate.set(nomination.candidateId, assignment.record);
         assignmentByCandidate.set(nomination.candidateId, assignment);
-        return;
+        fulfilledOrDeferred = true;
+        break;
       }
       const existingProportional = assignmentByCandidate.get(nomination.candidateId);
       if (!existingProportional || !newNominationPrevails(input, demand, existingProportional.demand)) {
@@ -178,14 +188,18 @@ function assignProportionalCandidates(
       assignment.record.resolutionReason = "pluricandidatura: scelto il collegio con minore percentuale della lista";
       electedByCandidate.set(nomination.candidateId, assignment.record);
       assignmentByCandidate.set(nomination.candidateId, assignment);
-      fill(replacementDemand);
-      return;
+      pendingDemands.push(replacementDemand);
+      fulfilledOrDeferred = true;
+      break;
     }
-    const replacement = allowCrossDistrictRecovery ? createReplacementDemand(input, demand, allDemands, electedByCandidate) : undefined;
+    if (fulfilledOrDeferred) continue;
+    const replacement = allowCrossDistrictRecovery
+      ? createReplacementDemand(input, demand, allDemands, electedByCandidate)
+      : undefined;
     if (replacement) {
       allDemands.push(replacement);
-      fill(replacement);
-      return;
+      pendingDemands.push(replacement);
+      continue;
     }
     ties.push({
       subjects: [demand.listId],
@@ -193,9 +207,7 @@ function assignProportionalCandidates(
       affectedSeats: [`${demand.territoryId}-${demand.listId}-${demand.seatIndex + 1}`],
       legalRule: "AC 2822-A articoli 84, 85, 86; candidati insufficienti/subentri da risolvere"
     });
-  };
-
-  for (const demand of demands) fill(demand);
+  }
   for (const assignment of assignmentByCandidate.values()) {
     elected.push(assignment.record);
     seatTrace.push(assignment.trace);
@@ -472,6 +484,21 @@ function expandCoalitionDistrictSeats(
     }
   }
 
+  return { seatsByDistrict, ties };
+}
+
+function expandDistrictCoalitionSeatsLocally(
+  input: ElectionInput,
+  results: TerritorialSeatResult[],
+  thresholds?: Record<Chamber, ThresholdResult>
+): { seatsByDistrict: Record<string, Record<string, number>>; ties: TieResolutionRequired[] } {
+  const seatsByDistrict: Record<string, Record<string, number>> = {};
+  const ties: TieResolutionRequired[] = [];
+  for (const result of results.filter((item) => item.scope === "district" || item.scope === "special-local-proportional")) {
+    const expanded = expandCoalitionSeats(input, result, thresholds?.[result.chamber]);
+    seatsByDistrict[result.territoryId] = expanded.seats;
+    ties.push(...expanded.ties);
+  }
   return { seatsByDistrict, ties };
 }
 

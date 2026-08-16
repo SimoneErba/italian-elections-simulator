@@ -5,6 +5,7 @@ import type { Candidate, ElectoralLawVersionId, ElectionInput, ElectionSimulatio
 import { loadLegacyCameraCsv } from "../../datasets/loaders/legacy-csv-loader";
 import { loadScenarioJson } from "../../datasets/loaders/json-loader";
 import { aggregateVotes } from "../../electoral-engine/pipeline/aggregate-votes";
+import { getLawVersion } from "../../electoral-engine/rules/registry";
 import { useAppStore } from "../../app/store";
 import cameraCandidateListUrl from "../../../data/input/camera-2022-candidatilista.csv?url";
 import cameraScrutiniUrl from "../../../data/input/Politiche2022_Scrutini_Camera_Italia.csv?url";
@@ -12,14 +13,25 @@ import senateCandidateListUrl from "../../../data/input/senato-2022-candlista.cs
 import senateScrutiniUrl from "../../../data/input/Politiche2022_Scrutini_Senato_Italia.csv?url";
 import bonusCandidateListsUrl from "../../../data/input/bonus-candidates-2022-random.csv?url";
 import foreignElectionUrl from "../../../data/input/estero.json?url";
+import specialTerritoriesUrl from "../../../data/input/special-territories-2022.json?url";
 
 type Language = "it" | "en";
 type SimulationMode = "2026" | "rosatellum" | "comparison";
+type ReportSection = "national" | "arcs" | "bonus" | "members" | "constituencies" | "debug";
+
+const defaultReportSectionOpen: Record<ReportSection, boolean> = {
+  national: true,
+  arcs: true,
+  bonus: true,
+  members: false,
+  constituencies: false,
+  debug: false
+};
 
 const lawVersionsForMode: Record<SimulationMode, ElectoralLawVersionId[]> = {
   "2026": ["ac-2822-a-2026-07-16"],
   rosatellum: ["rosatellum-2022"],
-  comparison: ["ac-2822-a-2026-07-16", "rosatellum-2022"]
+  comparison: ["rosatellum-2022", "ac-2822-a-2026-07-16"]
 };
 
 const sampleDataFiles = [
@@ -28,7 +40,8 @@ const sampleDataFiles = [
   { url: cameraCandidateListUrl, name: "camera-2022-candidatilista.csv" },
   { url: senateCandidateListUrl, name: "senato-2022-candlista.csv" },
   { url: bonusCandidateListsUrl, name: "bonus-candidates-2022-random.csv" },
-  { url: foreignElectionUrl, name: "estero.json" }
+  { url: foreignElectionUrl, name: "estero.json" },
+  { url: specialTerritoriesUrl, name: "special-territories-2022.json" }
 ] as const;
 
 const translations = {
@@ -48,17 +61,36 @@ const translations = {
     downloadingSample: "Preparazione download dati 2022...",
     sampleDownloadFailed: "Download dei dati 2022 non riuscito.",
     title: "Simulatore elettorale italiano",
-    lead: "Simulazione dei seggi parlamentari secondo la proposta AC 2822-A approvata dalla Camera nel 2026.",
-    loadDemo: "Simula con dati 2022",
+    lead: "Simula l'assegnazione dei seggi parlamentari con la proposta 2026, il Rosatellum o un confronto tra i due sistemi.",
+    loadDemo: "Simula con i dati 2022",
+    backToMainMenu: "Torna al menu principale",
     demoLoadedRandomBonus: "Dati 2022 caricati. La lista premio usa candidati fittizi, perche' non esisteva nel 2022.",
     downloadSample: "Scarica ZIP dati 2022",
-    importJsonCsv: "Importa i tuoi dati",
+    importJsonCsv: "Personalizza i dati",
+    workflowTitle: "Crea una simulazione",
+    workflowLead: "Usa direttamente i risultati delle elezioni 2022 oppure modifica voti e candidati.",
+    stepOneTitle: "Scegli la modalita",
+    stepOneBody: "La modalita stabilisce le regole della simulazione. Confronta le leggi mostra gli effetti dei due sistemi affiancati.",
+    stepTwoTitle: "2. Prepara i dati",
+    stepTwoBody: "Scarica il set di esempio, estrailo e modifica le copie locali. I dati 2022 sono un punto di partenza: il simulatore non modifica mai i tuoi file.",
+    stepThreeTitle: "3. Carica e calcola",
+    stepThreeBody: "Seleziona tutti i file necessari nello stesso momento. Il simulatore riconosce automaticamente il ruolo di ogni file e mostra i risultati dopo il controllo dei dati.",
+    requiredFiles: "Quali file devo caricare?",
+    voteFiles: "Voti e geografia — obbligatori",
+    voteFilesBody: "Politiche2022_Scrutini_Camera_Italia.csv, Politiche2022_Scrutini_Senato_Italia.csv e special-territories-2022.json. Per cambiare il consenso di una lista, modifica VOTI LISTE. Non rinominare o alterare LISTA, CIRCOSCRIZIONE, COLLEGIO PLURINOMINALE e COLLEGIO UNINOMINALE.",
+    foreignFile: "Circoscrizione Estero — obbligatoria",
+    foreignFileBody: "estero.json. Contiene le liste, i candidati e le preferenze per i seggi eletti all'estero.",
+    candidateFiles: "Nomi degli eletti — consigliati",
+    candidateFilesBody: "camera-2022-candidatilista.csv e senato-2022-candlista.csv. Modifica nomi e ordine di lista qui; descrlista deve corrispondere alla LISTA nei file dei voti e CollPlurinom al collegio plurinominale.",
+    bonusFile: "Premio di maggioranza 2026 — solo legge 2026",
+    bonusFileBody: "bonus-candidates-2022-random.csv. Cambia position e i nomi; conserva connectedSubjectId e chamber. Non caricarlo per Rosatellum, dove non serve.",
+    downloadAndEdit: "Scarica i file da modificare",
+    importAllFiles: "Carica i file e simula",
+    demoAlternative: "I risultati 2022 sono pronti: avvia subito la simulazione oppure personalizza i file.",
     simulationMode: "Modalita di simulazione",
-    law2026: "Nuova legge 2026",
-    lawRosatellum: "Rosatellum 2022",
+    law2026: "Proposta 2026",
+    lawRosatellum: "Rosatellum",
     lawComparison: "Confronta le leggi",
-    bonusFileNote: "Il file bonus-candidates serve solo per la nuova legge 2026; non e necessario per Rosatellum.",
-    comparisonResults: "Confronto risultati",
     help: "Aiuto",
     helpTitle: "Come usare il simulatore",
     helpIntro: "Simuliamo la nuova legge partendo dai risultati elettorali: voti di lista, collegi, coalizioni, Estero e liste candidati.",
@@ -72,7 +104,7 @@ const translations = {
       {
         label: "Quali file servono",
         body:
-          "Importa i due file scrutini Camera e Senato per calcolare i seggi nazionali. Aggiungi estero.json per includere la circoscrizione Estero. Aggiungi i due file candidati per vedere i nomi dei parlamentari proclamati. Aggiungi il file bonus-candidates per vedere chi entra con il premio."
+          "Importa i due file scrutini Camera e Senato per calcolare i seggi nazionali. Aggiungi estero.json per includere la circoscrizione Estero. Aggiungi i due file candidati per vedere i nomi dei parlamentari proclamati. Il file bonus-candidates serve solo per la nuova legge 2026; non e necessario per Rosatellum."
       },
       {
         label: "Cambiare i voti",
@@ -101,6 +133,8 @@ const translations = {
     bonusPeople: "Candidati proclamati con premio",
     bonusNoPeople: "Nessun candidato proclamato tramite premio.",
     bonusFailureReasons: "Condizioni non soddisfatte",
+    bonusSeatLimitReached: "Limite massimo dei seggi raggiunto",
+    bonusSeatLimitDetail: "Il vincitore del premio ha raggiunto il limite previsto dalla legge: {limits}.",
     awardedTo: "attribuito a",
     notAwarded: "non attribuito",
     simulationResults: "Risultati simulazione",
@@ -121,8 +155,6 @@ const translations = {
     names: "nomi",
     debugLog: "Debug log",
     steps: "step",
-    emptyTitle: "Importa uno scenario o usa il dataset demo",
-    emptyBody: "Simuliamo la nuova legge partendo dai risultati elettorali: voti di lista, collegi, coalizioni, Estero e liste candidati.",
     step: "Step",
     chamber: "Camera",
     seatsColumn: "Seggi",
@@ -193,17 +225,36 @@ const translations = {
     downloadingSample: "Preparing 2022 data download...",
     sampleDownloadFailed: "2022 data download failed.",
     title: "Italian election simulator",
-    lead: "Parliamentary seat simulation under the AC 2822-A proposal approved by the Chamber in 2026.",
+    lead: "Simulate parliamentary-seat allocation under the 2026 proposal, Rosatellum, or compare both systems.",
     loadDemo: "Simulate with 2022 data",
+    backToMainMenu: "Back to main menu",
     demoLoadedRandomBonus: "2022 data loaded. The bonus list uses fictional candidates because it did not exist in 2022.",
     downloadSample: "Download 2022 ZIP",
     importJsonCsv: "Import your data",
+    workflowTitle: "Build a simulation",
+    workflowLead: "Use the 2022 election results directly, or edit votes and candidates.",
+    stepOneTitle: "Choose the mode",
+    stepOneBody: "The mode determines the simulation rules. Compare laws shows the effects of the two systems side by side.",
+    stepTwoTitle: "2. Prepare the data",
+    stepTwoBody: "Download the example set, extract it, and edit your local copies. The 2022 data is a starting point: the simulator never changes your files.",
+    stepThreeTitle: "3. Upload and calculate",
+    stepThreeBody: "Select every required file at once. The simulator identifies each file automatically and shows results after validating the data.",
+    requiredFiles: "Which files do I need to upload?",
+    voteFiles: "Votes and geography — required",
+    voteFilesBody: "Politiche2022_Scrutini_Camera_Italia.csv, Politiche2022_Scrutini_Senato_Italia.csv, and special-territories-2022.json. To change support for a list, edit VOTI LISTE. Do not rename or alter LISTA, CIRCOSCRIZIONE, COLLEGIO PLURINOMINALE, or COLLEGIO UNINOMINALE.",
+    foreignFile: "Foreign constituency — required",
+    foreignFileBody: "estero.json. It contains the lists, candidates, and preferences used to elect the foreign seats.",
+    candidateFiles: "Names of elected members — recommended",
+    candidateFilesBody: "camera-2022-candidatilista.csv and senato-2022-candlista.csv. Edit names and list order here; descrlista must match LISTA in the vote files, and CollPlurinom the multi-member district.",
+    bonusFile: "2026 majority bonus — 2026 law only",
+    bonusFileBody: "bonus-candidates-2022-random.csv. Change position and names, but retain connectedSubjectId and chamber. Do not upload it for Rosatellum, where it is not used.",
+    downloadAndEdit: "Download files to edit",
+    importAllFiles: "Upload files and simulate",
+    demoAlternative: "The 2022 results are ready: run the simulation now, or customize the files.",
     simulationMode: "Simulation mode",
-    law2026: "New 2026 law",
-    lawRosatellum: "Rosatellum 2022",
+    law2026: "2026 proposal",
+    lawRosatellum: "Rosatellum",
     lawComparison: "Compare laws",
-    bonusFileNote: "The bonus-candidates file is only used for the new 2026 law; it is not needed for Rosatellum.",
-    comparisonResults: "Results comparison",
     help: "Help",
     helpTitle: "How to use the simulator",
     helpIntro: "We simulate the new law from election results: list votes, districts, coalitions, foreign seats, and candidate lists.",
@@ -217,7 +268,7 @@ const translations = {
       {
         label: "Which files matter",
         body:
-          "Import the Chamber and Senate vote files to calculate national seats. Add estero.json to include the foreign constituency. Add the two candidate-list files to see proclaimed member names. Add the bonus-candidates file to see who enters through the bonus."
+          "Import the Chamber and Senate vote files to calculate national seats. Add estero.json to include the foreign constituency. Add the two candidate-list files to see proclaimed member names. The bonus-candidates file is only used for the new 2026 law; it is not needed for Rosatellum."
       },
       {
         label: "Changing votes",
@@ -246,6 +297,8 @@ const translations = {
     bonusPeople: "Candidates proclaimed through bonus",
     bonusNoPeople: "No candidate was proclaimed through the bonus.",
     bonusFailureReasons: "Failed conditions",
+    bonusSeatLimitReached: "Maximum seat limit reached",
+    bonusSeatLimitDetail: "The bonus winner has reached the statutory seat limit: {limits}.",
     awardedTo: "awarded to",
     notAwarded: "not awarded",
     simulationResults: "Simulation results",
@@ -266,8 +319,6 @@ const translations = {
     names: "names",
     debugLog: "Debug log",
     steps: "steps",
-    emptyTitle: "Import a scenario or use the demo dataset",
-    emptyBody: "We simulate the new law from election results: list votes, districts, coalitions, foreign seats, and candidate lists.",
     step: "Step",
     chamber: "Chamber",
     seatsColumn: "Seats",
@@ -340,8 +391,10 @@ export function ResultsPage() {
     const savedLanguage = window.localStorage.getItem("italian-elections-language");
     return savedLanguage === "en" ? "en" : "it";
   });
-  const [helpOpen, setHelpOpen] = useState(false);
   const [simulationMode, setSimulationMode] = useState<SimulationMode>("2026");
+  const [displayedSimulationMode, setDisplayedSimulationMode] = useState<SimulationMode>("2026");
+  const [showMainMenu, setShowMainMenu] = useState(() => !results);
+  const [showCustomData, setShowCustomData] = useState(false);
   const t = translations[language];
   const themeToggleLabel = darkTheme ? t.themeLight : t.themeDark;
   const subtitle = t.lead;
@@ -365,6 +418,8 @@ export function ResultsPage() {
     try {
       await nextFrame();
       await loadFixture(lawVersionsForMode[simulationMode]);
+      setDisplayedSimulationMode(simulationMode);
+      setShowMainMenu(false);
       setNotice(t.demoLoadedRandomBonus);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : t.demoLoadFailed);
@@ -409,6 +464,7 @@ export function ResultsPage() {
       const cameraCandidates = texts.find(({ file, text }) => isCandidateList(file.name, text, "camera"));
       const senateCandidates = texts.find(({ file, text }) => isCandidateList(file.name, text, "senate"));
       const foreignElection = texts.find(({ file, text }) => isForeignElectionJson(file.name, text));
+      const specialTerritories = texts.find(({ file, text }) => isSpecialTerritoriesJson(file.name, text));
       const csvFiles = selected.filter((file) => file.name.toLowerCase().endsWith(".csv"));
       setLoadingStatus(t.calculating);
       await nextFrame();
@@ -421,7 +477,8 @@ export function ResultsPage() {
           bonusCandidateListsCsv: bonusCandidateLists?.text,
           cameraCandidateListCsv: cameraCandidates?.text,
           senateCandidateListCsv: senateCandidates?.text,
-          foreignElectionJson: foreignElection.text
+          foreignElectionJson: foreignElection.text,
+          specialTerritoriesJson: specialTerritories?.text
         }, lawVersionsForMode[simulationMode]);
       } else {
         const loaded = csvFiles.length > 1
@@ -431,6 +488,8 @@ export function ResultsPage() {
             : loadScenarioJson(texts[0].text);
         await loadScenario(loaded, lawVersionsForMode[simulationMode]);
       }
+      setDisplayedSimulationMode(simulationMode);
+      setShowMainMenu(false);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : t.importFailed);
     } finally {
@@ -439,7 +498,7 @@ export function ResultsPage() {
   }
 
   return (
-    <main className="appShell">
+    <main className={`appShell${displayedSimulationMode === "comparison" ? " comparisonLayout" : ""}`}>
       <section className="topbar">
         <div className="topbarContent">
           <div className="topbarHeader">
@@ -448,10 +507,6 @@ export function ResultsPage() {
               <p className="topbarLead">{subtitle}</p>
             </div>
             <div className="topbarControls">
-              <button type="button" className="secondaryButton helpButton" onClick={() => setHelpOpen(true)}>
-                <span aria-hidden="true">?</span>
-                <span>{t.help}</span>
-              </button>
               <button
                 type="button"
                 className="secondaryButton languageButton"
@@ -465,109 +520,94 @@ export function ResultsPage() {
                 {darkTheme ? "☀" : "☾"}
                 <span className="visuallyHidden">{themeToggleLabel}</span>
               </button>
+              {results && !showMainMenu ? (
+                <button type="button" className="secondaryButton" onClick={() => setShowMainMenu(true)}>
+                  {t.backToMainMenu}
+                </button>
+              ) : null}
             </div>
           </div>
-          <div className="actions">
-            <div className="primaryActions">
-              <button type="button" onClick={() => void loadDemo()}>{t.loadDemo}</button>
-              <button type="button" onClick={() => void downloadSampleData()}>{t.downloadSample}</button>
-              <label className="fileButton">
-                {t.importJsonCsv}
-                <input
-                  type="file"
-                  accept=".json,.csv,application/json,text/csv"
-                  multiple
-                  onChange={(event) => {
+          {showMainMenu ? <section className="simulationSetup" aria-labelledby="simulation-setup-title">
+            <div className="setupHeading">
+              <h2 id="simulation-setup-title">{t.workflowTitle}</h2>
+              <p>{t.workflowLead}</p>
+            </div>
+            <div className="setupActions">
+              <fieldset className="lawModePicker">
+                <legend>{t.simulationMode}</legend>
+                {(["2026", "rosatellum", "comparison"] as const).map((mode) => (
+                  <label key={mode}>
+                    <input type="radio" name="simulation-mode" checked={simulationMode === mode} onChange={() => setSimulationMode(mode)} />
+                    {mode === "2026" ? t.law2026 : mode === "rosatellum" ? t.lawRosatellum : t.lawComparison}
+                  </label>
+                ))}
+              </fieldset>
+              <p>{t.demoAlternative}</p>
+              <div className="simulationCtas">
+                <button type="button" className="primaryButton" onClick={() => void loadDemo()}>{t.loadDemo}</button>
+                <button type="button" className="secondaryButton" aria-expanded={showCustomData} onClick={() => setShowCustomData((shown) => !shown)}>{t.importJsonCsv}</button>
+              </div>
+            </div>
+            {showCustomData ? <section className="customDataSetup" aria-label={t.importJsonCsv}>
+              <div className="setupSteps">
+                <section className="setupStep">
+                  <h3>{t.stepTwoTitle}</h3><p>{t.stepTwoBody}</p>
+                  <button type="button" className="secondaryButton" onClick={() => void downloadSampleData()}>{t.downloadAndEdit}</button>
+                </section>
+                <section className="setupStep">
+                  <h3>{t.stepThreeTitle}</h3><p>{t.stepThreeBody}</p>
+                  <label className="fileButton">{t.importAllFiles}<input type="file" accept=".json,.csv,application/json,text/csv" multiple onChange={(event) => {
                     const files = event.target.files;
                     if (files?.length) void importFiles(files);
-                  }}
-                />
-              </label>
-            </div>
-            <fieldset className="lawModePicker">
-              <legend>{t.simulationMode}</legend>
-              {(["2026", "rosatellum", "comparison"] as const).map((mode) => (
-                <label key={mode}>
-                  <input
-                    type="radio"
-                    name="simulation-mode"
-                    checked={simulationMode === mode}
-                    onChange={() => {
-                      setSimulationMode(mode);
-                      if (scenario) void loadScenario(scenario, lawVersionsForMode[mode]);
-                    }}
-                  />
-                  {mode === "2026" ? t.law2026 : mode === "rosatellum" ? t.lawRosatellum : t.lawComparison}
-                </label>
-              ))}
-            </fieldset>
-            <p className="bonusFileNote">{t.bonusFileNote}</p>
-          </div>
+                  }} /></label>
+                </section>
+              </div>
+              <details className="dataGuide">
+                <summary>{t.requiredFiles}</summary>
+                <dl>
+                  <div><dt>{t.voteFiles}</dt><dd>{t.voteFilesBody}</dd></div>
+                  <div><dt>{t.foreignFile}</dt><dd>{t.foreignFileBody}</dd></div>
+                  <div><dt>{t.candidateFiles}</dt><dd>{t.candidateFilesBody}</dd></div>
+                  <div><dt>{t.bonusFile}</dt><dd>{t.bonusFileBody}</dd></div>
+                </dl>
+              </details>
+            </section> : null}
+          </section> : null}
         </div>
       </section>
-
-      {helpOpen ? <HelpDialog t={t} onClose={() => setHelpOpen(false)} /> : null}
 
       {loadingStatus ? <div className="loadingBanner">{loadingStatus}</div> : null}
       {error ? <div className="alert">{error}</div> : null}
       {notice ? <div className="noticeBanner">{notice}</div> : null}
 
-      {results ? (
-        <section className={simulationMode === "comparison" ? "comparisonResults" : "resultCards"} aria-label={t.simulationResults}>
-          {lawVersionsForMode[simulationMode].map((lawVersion) => {
+      {results && !showMainMenu ? (
+        <section className={displayedSimulationMode === "comparison" ? "comparisonResults" : "resultCards"} aria-label={t.simulationResults}>
+          {lawVersionsForMode[displayedSimulationMode].map((lawVersion) => {
             const result = results[lawVersion];
             if (!result) return null;
             return (
               <SimulationReport
                 key={lawVersion}
-                className={simulationMode === "comparison" ? "comparisonColumn" : undefined}
-                title={simulationMode === "comparison" ? (lawVersion === "ac-2822-a-2026-07-16" ? t.law2026 : t.lawRosatellum) : undefined}
+                className={displayedSimulationMode === "comparison" ? "comparisonColumn" : undefined}
+                title={displayedSimulationMode === "comparison" ? (lawVersion === "ac-2822-a-2026-07-16" ? t.law2026 : t.lawRosatellum) : undefined}
                 scenario={scenario ? { ...scenario, lawVersion } : scenario}
                 result={result}
                 subjectNameById={subjectNameById}
                 candidateById={candidateById}
                 t={t}
+                onSectionToggle={displayedSimulationMode === "comparison" ? (section, open) => {
+                  document
+                    .querySelectorAll<HTMLDetailsElement>(`details[data-report-section="${section}"]`)
+                    .forEach((card) => {
+                      if (card.open !== open) card.open = open;
+                    });
+                } : undefined}
               />
             );
           })}
         </section>
-      ) : (
-        <section className="emptyState">
-          <h2>{t.emptyTitle}</h2>
-          <p>{t.emptyBody}</p>
-        </section>
-      )}
+      ) : null}
     </main>
-  );
-}
-
-function HelpDialog({ t, onClose }: { t: Translation; onClose: () => void }) {
-  return (
-    <div className="dialogBackdrop" role="presentation" onMouseDown={onClose}>
-      <section
-        className="helpDialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="help-dialog-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="helpDialogHeader">
-          <h2 id="help-dialog-title">{t.helpTitle}</h2>
-          <button type="button" className="secondaryButton helpCloseButton" aria-label={t.helpClose} onClick={onClose}>
-            x
-          </button>
-        </div>
-        <p>{t.helpIntro}</p>
-        <dl className="helpList">
-          {t.helpItems.map((item) => (
-            <div key={item.label}>
-              <dt>{item.label}</dt>
-              <dd>{item.body}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-    </div>
   );
 }
 
@@ -578,7 +618,8 @@ function SimulationReport({
   result,
   subjectNameById,
   candidateById,
-  t
+  t,
+  onSectionToggle
 }: {
   className?: string;
   title?: string;
@@ -587,28 +628,29 @@ function SimulationReport({
   subjectNameById: Map<string, string>;
   candidateById: Map<string, Candidate>;
   t: Translation;
+  onSectionToggle?: (section: ReportSection, open: boolean) => void;
 }) {
   return (
     <div className={className}>
       {title ? <h2 className="comparisonTitle">{title}</h2> : null}
       <div className="resultCards">
-        <CollapsibleCard title={t.nationalResults} meta={`${nationalSubjectCount(result)} ${t.subjects}`} defaultOpen>
+        <CollapsibleCard title={t.nationalResults} meta={`${nationalSubjectCount(result)} ${t.subjects}`} section="national" onToggle={onSectionToggle}>
           <ChamberResult chamber="camera" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} />
           <ChamberResult chamber="senate" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} />
         </CollapsibleCard>
-        <CollapsibleCard title={t.parliamentArcs} meta={`${totalAssignedSeats(result)} ${t.seats}`} defaultOpen>
+        <CollapsibleCard title={t.parliamentArcs} meta={`${totalAssignedSeats(result)} ${t.seats}`} section="arcs" onToggle={onSectionToggle}>
           <ParliamentArcsOverview result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
         </CollapsibleCard>
-        <CollapsibleCard title={t.bonusDetails} meta={result.bonus.awarded ? t.bonusYes : t.bonusNo} defaultOpen>
+        <CollapsibleCard title={t.bonusDetails} meta={result.bonus.awarded ? t.bonusYes : t.bonusNo} section="bonus" onToggle={onSectionToggle}>
           <BonusReport scenario={scenario} result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
         </CollapsibleCard>
-        <CollapsibleCard title={t.proclaimedMembers} meta={`${result.electedCandidates.length} ${t.names}`}>
+        <CollapsibleCard title={t.proclaimedMembers} meta={`${proclaimedMemberCount(result)} ${t.names}`} section="members" onToggle={onSectionToggle}>
           <ElectedCandidatesReport result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
         </CollapsibleCard>
-        <CollapsibleCard title={t.constituencyReport} meta={`${scenario?.constituencies.length ?? 0} ${t.constituency.toLowerCase()}`}>
+        <CollapsibleCard title={t.constituencyReport} meta={`${scenario?.constituencies.length ?? 0} ${t.constituency.toLowerCase()}`} section="constituencies" onToggle={onSectionToggle}>
           <ConstituencyReport scenario={scenario} result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
         </CollapsibleCard>
-        <CollapsibleCard title={t.debugLog} meta={`${buildDebugRows(result, subjectNameById, candidateById, t).length} ${t.steps}`}>
+        <CollapsibleCard title={t.debugLog} meta={`${buildDebugRows(result, subjectNameById, candidateById, t).length} ${t.steps}`} section="debug" onToggle={onSectionToggle}>
           <DebugLog result={result} subjectNameById={subjectNameById} candidateById={candidateById} t={t} />
         </CollapsibleCard>
       </div>
@@ -619,16 +661,23 @@ function SimulationReport({
 function CollapsibleCard({
   title,
   meta,
-  defaultOpen,
+  section,
+  onToggle,
   children
 }: {
   title: string;
   meta?: string;
-  defaultOpen?: boolean;
+  section: ReportSection;
+  onToggle?: (section: ReportSection, open: boolean) => void;
   children: ReactNode;
 }) {
   return (
-    <details className="resultCard" open={defaultOpen}>
+    <details
+      className="resultCard"
+      data-report-section={section}
+      open={defaultReportSectionOpen[section]}
+      onToggle={onToggle ? (event) => onToggle(section, event.currentTarget.open) : undefined}
+    >
       <summary>
         <span>{title}</span>
         {meta ? <small>{meta}</small> : null}
@@ -796,6 +845,16 @@ function isForeignElectionJson(fileName: string, text: string): boolean {
   try {
     const parsed = JSON.parse(text) as { election?: unknown; chambers?: { camera?: unknown; senato?: unknown } };
     return parsed.election === "politiche-2022" && Boolean(parsed.chambers?.camera && parsed.chambers?.senato);
+  } catch {
+    return false;
+  }
+}
+
+function isSpecialTerritoriesJson(fileName: string, text: string): boolean {
+  if (!fileName.toLowerCase().endsWith(".json")) return false;
+  try {
+    const parsed = JSON.parse(text) as { districts?: unknown };
+    return Array.isArray(parsed.districts);
   } catch {
     return false;
   }
@@ -992,6 +1051,15 @@ function BonusReport({
   t: Translation;
 }) {
   const winnerName = result.bonus.winnerId ? subjectNameById.get(result.bonus.winnerId) ?? result.bonus.winnerId : "-";
+  const winnerSeatLimits = useMemo(() => {
+    if (!result.bonus.awarded || !result.bonus.winnerId || result.lawVersion !== "ac-2822-a-2026-07-16") return [];
+    const rules = getLawVersion(result.lawVersion).chamberRules;
+    return (["camera", "senate"] as const).flatMap((chamber) => {
+      const limit = rules[chamber].maxWinnerSeatsWithBonus;
+      const seats = result.nationalResults[chamber]?.seats[result.bonus.winnerId!] ?? 0;
+      return seats >= limit ? [`${formatChamber(chamber, t)}: ${seats}/${limit}`] : [];
+    });
+  }, [result, t]);
   const bonusSeats = buildElectedSeats(result, subjectNameById, candidateById)
     .filter((seat) => seat.nominationType === "bonus-priority-list")
     .sort((a, b) => formatChamber(a.chamber, t).localeCompare(formatChamber(b.chamber, t)) || a.listPosition - b.listPosition || a.name.localeCompare(b.name));
@@ -1040,6 +1108,13 @@ function BonusReport({
               <li key={condition}>{condition}</li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {winnerSeatLimits.length > 0 ? (
+        <div className="bonusLimitNotice" role="status">
+          <h3>{t.bonusSeatLimitReached}</h3>
+          <p>{t.bonusSeatLimitDetail.replace("{limits}", winnerSeatLimits.join(", "))}</p>
         </div>
       ) : null}
 
@@ -1172,7 +1247,38 @@ function ChamberResult({
   const national = result.nationalResults[chamber];
   const [expandedCoalitions, setExpandedCoalitions] = useState<Set<string>>(() => new Set());
   const coalitionById = useMemo(() => new Map(scenario?.coalitions.map((coalition) => [coalition.id, coalition]) ?? []), [scenario]);
-  const displayVoteTotals = useMemo(() => (scenario ? aggregateVotes(scenario, true)[chamber] : undefined), [scenario, chamber]);
+  const displayVoteTotals = useMemo(() => {
+    if (!scenario) return undefined;
+    const totals = aggregateVotes(scenario, true)[chamber];
+
+    // Special direct mandates have candidate tallies rather than list-vote
+    // rows. Include the winning tally in the results display without feeding
+    // it into the proportional allocation. Camera Trentino-Alto Adige keeps
+    // its ordinary list-vote rows, so only its Valle d'Aosta mandate is added.
+    const directVoteDistrictIds = new Set(
+      (scenario.singleMemberDistricts ?? [])
+        .filter(
+          (district) =>
+            district.chamber === chamber &&
+            district.specialTerritory &&
+            (chamber === "senate" || district.specialTerritory === "valle-aosta")
+        )
+        .map((district) => district.id)
+    );
+    for (const candidateVote of scenario.candidateVotes ?? []) {
+      if (candidateVote.chamber !== chamber || !directVoteDistrictIds.has(candidateVote.districtId)) continue;
+      const nomination = (scenario.nominations ?? []).find(
+        (item) => item.candidateId === candidateVote.candidateId && item.chamber === chamber &&
+          item.districtId === candidateVote.districtId && item.nominationType === "single-member"
+      );
+      if (!nomination) continue;
+      const subjectId = nomination.connectedSubjectId ?? nomination.listId;
+      totals.listVotes[nomination.listId] = (totals.listVotes[nomination.listId] ?? 0n) + candidateVote.votes;
+      totals.subjectVotes[subjectId] = (totals.subjectVotes[subjectId] ?? 0n) + candidateVote.votes;
+      totals.totalValidVotes += candidateVote.votes;
+    }
+    return totals;
+  }, [scenario, chamber]);
   const rows = national ? Object.entries(national.seats).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) : [];
   if (!national) return null;
   const displayTotalValidVotes = displayVoteTotals?.totalValidVotes ?? national.totalValidVotes;
@@ -1734,6 +1840,13 @@ function buildElectedSeats(
     const chamberOrder = String(a.chamber).localeCompare(String(b.chamber));
     return chamberOrder || a.partyName.localeCompare(b.partyName) || a.name.localeCompare(b.name);
   });
+}
+
+function proclaimedMemberCount(result: ElectionSimulationResult): number {
+  return result.electedCandidates.length + Object.values(result.foreignResults).reduce(
+    (total, chamber) => total + (chamber?.electedCandidates.length ?? 0),
+    0
+  );
 }
 
 function buildConstituencyGroups(

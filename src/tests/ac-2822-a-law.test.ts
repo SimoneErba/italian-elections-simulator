@@ -217,6 +217,45 @@ describe("AC 2822-A legal behavior", () => {
     expect(result.ties).toContainEqual(expect.objectContaining({ subjects: ["cand-c", "cand-d"] }));
   });
 
+  it("does not carry ordinary 2022 uninominal districts into the 2026 law", () => {
+    const result = simulateElection({
+      ...scenario({}),
+      candidates: [
+        { id: "special", firstName: "Special", lastName: "Winner" },
+        { id: "ordinary", firstName: "Ordinary", lastName: "Winner" }
+      ],
+      regions: [
+        { id: "r1", name: "R1" },
+        { id: "r2", name: "R2" },
+        { id: "vda", name: "Valle d'Aosta" }
+      ],
+      constituencies: [
+        { id: "camera-r1", chamber: "camera", regionId: "r1", name: "Camera R1" },
+        { id: "camera-r2", chamber: "camera", regionId: "r2", name: "Camera R2" },
+        { id: "senate-r1", chamber: "senate", regionId: "r1", name: "Senate R1" },
+        { id: "senate-r2", chamber: "senate", regionId: "r2", name: "Senate R2" },
+        { id: "camera-vda", chamber: "camera", regionId: "vda", name: "Camera Valle d'Aosta" }
+      ],
+      singleMemberDistricts: [
+        { id: "vda-u1", chamber: "camera", regionId: "vda", constituencyId: "camera-vda", name: "Valle d'Aosta", specialTerritory: "valle-aosta", seats: 1 },
+        { id: "ordinary-u1", chamber: "camera", regionId: "r1", constituencyId: "camera-r1", name: "Ordinary district", seats: 1 }
+      ],
+      nominations: [
+        { candidateId: "special", chamber: "camera", listId: "a", districtId: "vda-u1", position: 1, nominationType: "single-member" },
+        { candidateId: "ordinary", chamber: "camera", listId: "b", districtId: "ordinary-u1", position: 1, nominationType: "single-member" }
+      ],
+      candidateVotes: [
+        { chamber: "camera", districtId: "vda-u1", candidateId: "special", votes: 10_000n },
+        { chamber: "camera", districtId: "ordinary-u1", candidateId: "ordinary", votes: 20_000n }
+      ]
+    });
+
+    expect(result.nationalResults.camera!.seats.a).toBeGreaterThanOrEqual(1);
+    expect(totalSeats(result.nationalResults.camera!.seats)).toBe(385);
+    expect(result.seatTrace).toContainEqual(expect.objectContaining({ seatId: "vda-u1-1", candidateId: "special" }));
+    expect(result.seatTrace).not.toContainEqual(expect.objectContaining({ seatId: "ordinary-u1-1" }));
+  });
+
   it("uses Trentino-Alto Adige local votes only for the bonus check totals", () => {
     const base = addTrentinoAltoAdigeCameraLocalDistrict(scenario({}), {
       a: 1_000n,

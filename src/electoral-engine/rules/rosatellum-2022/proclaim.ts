@@ -251,7 +251,19 @@ function resolveRecoveryPluricandidacies(input: ElectionInput, choices: Choice[]
       for (const index of indexes) {
         if (index === kept) continue;
         const vacancy = choices[index];
-        const replacement = (local.get(demandKey(vacancy.demand.chamber, vacancy.demand.districtId, vacancy.demand.listId)) ?? []).find((nomination) => !occupied.has(nomination.candidateId));
+        // A recovery may itself create a multiple election. If the released
+        // college has no local substitute, continue the article 84 chain with
+        // an unproclaimed candidate of the same list in another college.
+        const replacement = (local.get(demandKey(vacancy.demand.chamber, vacancy.demand.districtId, vacancy.demand.listId)) ?? []).find((nomination) => !occupied.has(nomination.candidateId))
+          ?? [...local.values()]
+            .flat()
+            .filter((nomination) =>
+              nomination.chamber === vacancy.demand.chamber &&
+              nomination.listId === vacancy.demand.listId &&
+              !singleWinners.has(nomination.candidateId) &&
+              !occupied.has(nomination.candidateId)
+            )
+            .sort(nominationOrder)[0];
         if (!replacement) {
           ties.push(unresolved([vacancy.demand.listId], vacancy.demand.districtId, "subentro locale dopo plurielezione non disponibile"));
           unproclaimed.add(index);
