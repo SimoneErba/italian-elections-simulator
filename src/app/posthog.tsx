@@ -6,6 +6,7 @@ const posthogKey = import.meta.env.VITE_POSTHOG_KEY;
 
 if (posthogKey) {
   posthog.init(posthogKey, {
+    api_host: "https://eu.i.posthog.com",
     capture_pageview: "history_change",
     loaded: (client) => {
       client.register({ project: "elections" });
