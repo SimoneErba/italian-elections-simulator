@@ -166,6 +166,267 @@ button:disabled {
   max-width: 72rem;
 }
 
+.methodologyGuide {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 1.25rem;
+  overflow: hidden;
+}
+
+.methodologyGuide summary {
+  align-items: center;
+  background: var(--surface-muted);
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  font-weight: 800;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 1rem 1.15rem;
+}
+
+.methodologyGuide summary::-webkit-details-marker {
+  display: none;
+}
+
+.methodologyGuide summary::after {
+  content: "+";
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.methodologyGuide[open] summary::after {
+  content: "−";
+}
+
+.methodologyBody {
+  border-top: 1px solid var(--border);
+}
+
+.methodologyHeader,
+.methodologySection {
+  padding: 1.35rem;
+}
+
+.methodologyHeader h2 {
+  font-size: 1.35rem;
+}
+
+.methodologyHeader > p,
+.methodologySection > p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0.45rem 0 0;
+}
+
+.methodologyStatus {
+  background: var(--surface-muted);
+  border-left: 4px solid var(--primary);
+  border-radius: 6px;
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.methodologyStatus h3,
+.methodologySection h3 {
+  font-size: 1.05rem;
+}
+
+.methodologyStatus p {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0.35rem 0 0;
+}
+
+.methodologySection {
+  border-top: 1px solid var(--border-soft);
+}
+
+.methodologyInputGrid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0 0;
+}
+
+.methodologyInputGrid > div {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.methodologyInputGrid dt {
+  font-weight: 800;
+}
+
+.methodologyInputGrid dd {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0.3rem 0 0;
+}
+
+.methodologyTableScroller {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.methodologyPoolTable {
+  min-width: 760px;
+}
+
+.methodologyPoolTable th,
+.methodologyPoolTable td {
+  padding: 0.7rem 0.55rem;
+  white-space: nowrap;
+}
+
+.methodologyPoolTable tbody th {
+  color: var(--text);
+  font-size: 0.9rem;
+  text-transform: none;
+}
+
+.methodologyFormula {
+  border-left: 3px solid var(--border);
+  font-size: 0.88rem;
+  padding-left: 0.75rem;
+}
+
+.methodologyExample {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 1rem;
+  padding: 0.85rem;
+}
+
+.methodologyExample strong,
+.methodologyExample span {
+  display: block;
+}
+
+.methodologyExample span {
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 0.3rem;
+}
+
+.methodologySteps {
+  counter-reset: methodology-step;
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.methodologySteps li {
+  counter-increment: methodology-step;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+}
+
+.methodologySteps li::before {
+  align-items: center;
+  background: var(--primary);
+  border-radius: 50%;
+  color: var(--primary-text);
+  content: counter(methodology-step);
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 800;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.methodologySteps li > div {
+  border-bottom: 1px solid var(--border-softer);
+  padding: 0.2rem 0 1rem;
+}
+
+.methodologySteps li + li {
+  padding-top: 1rem;
+}
+
+.methodologySteps li:last-child > div {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.methodologySteps strong {
+  display: block;
+}
+
+.methodologySteps p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0.3rem 0 0;
+}
+
+.methodologySteps small {
+  color: var(--primary);
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.45rem;
+}
+
+.methodologyAssumptions {
+  display: grid;
+  gap: 0.65rem;
+  line-height: 1.5;
+  margin: 0.85rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.methodologyChecklist {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.methodologyChecklist ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.45rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.methodologySources {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.methodologySources li {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.8rem;
+}
+
+.methodologySources a {
+  color: var(--primary);
+  display: block;
+  font-weight: 800;
+}
+
+.methodologySources span {
+  color: var(--muted);
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-top: 0.3rem;
+}
+
 h1,
 h2,
 h3 {
@@ -1133,8 +1394,15 @@ th {
 
   .comparisonResults,
   .setupSteps,
-  .dataGuide dl {
+  .dataGuide dl,
+  .methodologyInputGrid,
+  .methodologySources {
     grid-template-columns: 1fr;
+  }
+
+  .methodologyHeader,
+  .methodologySection {
+    padding: 1rem;
   }
 
   .chamberHeader {

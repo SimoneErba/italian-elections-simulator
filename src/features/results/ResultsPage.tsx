@@ -92,6 +92,68 @@ const translations = {
     lawRosatellum: "Rosatellum",
     lawComparison: "Confronta le leggi",
     help: "Aiuto",
+    methodology: "Come funziona il calcolo: metodo, ipotesi e fonti",
+    methodologyTitle: "Dal voto al seggio, passo per passo",
+    methodologyIntro: "Qui puoi controllare che cosa entra nel calcolo, quale regola viene applicata e dove finisce ogni seggio. La catena verificabile è: versione della legge → file di input → regole implementate → riparti → proclamazione.",
+    methodologyStatusTitle: "Che cosa stai guardando",
+    methodologyStatusBody: "La modalità Proposta 2026 applicata ai voti del 2022 risponde a una domanda controfattuale: «come sarebbero stati ripartiti quei voti se fossero valse queste regole?». Non ricostruisce il risultato ufficiale del 2022 e non prevede il voto futuro. La modalità Rosatellum applica invece il sistema usato nel 2022; il confronto esegue entrambi i motori sugli stessi file.",
+    methodologyInputsTitle: "1. Quali dati entrano nel motore",
+    methodologyInputsIntro: "I file hanno funzioni diverse e il motore non mescola quantità che la legge tratta separatamente.",
+    methodologyInputItems: [
+      { label: "Voti di lista", body: "I due CSV degli scrutini comunali forniscono VOTI LISTE, lista, collegio e circoscrizione. Servono per soglie, premio e riparti proporzionali." },
+      { label: "Geografia e capienza", body: "I collegi del 2022 identificano i territori; per la proposta 2026 la loro capienza viene sostituita con le tabelle versionate 314/384 Camera e 154/189 Senato, secondo che il premio scatti o no." },
+      { label: "Candidati", body: "I CSV candidati danno l'ordine delle liste plurinominali. Il file bonus separato dà l'ordine dei candidati al premio. I nomi non cambiano il numero di seggi assegnato a una forza politica." },
+      { label: "Bacini separati", body: "Estero e territori speciali hanno file e regole proprie. I voti diretti ai candidati speciali non sono voti di lista e non vengono sommati al proporzionale." }
+    ],
+    methodologyPoolsTitle: "2. Prima regola: i bacini dei seggi",
+    methodologyPoolsIntro: "I seggi del premio non si aggiungono al totale: vengono sottratti al bacino proporzionale ordinario. I tre bacini — Italia ordinaria, territori speciali ed Estero — restano distinti.",
+    methodologyPoolHeaders: ["Ramo", "Totale", "Estero", "Speciali", "Ordinari senza premio", "Proporzionali con premio", "Premio"],
+    methodologyPoolRows: [
+      ["Camera dei deputati", "400", "8", "8", "384", "314", "70"],
+      ["Senato della Repubblica", "200", "4", "7", "189", "154", "35"]
+    ],
+    methodologyPoolFormula: "Controllo del totale: 384 + 8 + 8 = 400 alla Camera; 189 + 7 + 4 = 200 al Senato. Se c'è il premio: 314 + 70 = 384 e 154 + 35 = 189.",
+    methodologyAlgorithmTitle: "3. Algoritmo della proposta 2026",
+    methodologyAlgorithmIntro: "Il calcolo viene eseguito separatamente per Camera e Senato, salvo la verifica congiunta richiesta per il premio.",
+    methodologyHareExampleTitle: "Esempio minimo del metodo Hare",
+    methodologyHareExampleBody: "Con 1.000.000 di voti ammessi e 10 seggi, il quoziente è 100.000. Un soggetto con 260.000 voti riceve subito 2 seggi interi e conserva un resto di 60.000. Dopo aver assegnato tutti i seggi interi, gli eventuali seggi ancora liberi vanno ai resti più alti.",
+    methodologyAlgorithmSteps: [
+      { title: "Validazione e normalizzazione", body: "Il motore controlla duplicati, riferimenti tra liste, coalizioni e territori, coerenza della Camera, date, voti negativi e struttura di Estero. Le righe comunali vengono poi sommate con aritmetica intera, senza arrotondare i voti.", reference: "Controlli sull'input" },
+      { title: "Costruzione di due totali di voto", body: "Il totale ordinario esclude Estero e territori speciali ed è usato per soglie e seggi proporzionali. Un secondo totale, usato solo per verificare il premio, include anche i voti di lista dei territori speciali. I voti personali dei candidati speciali non entrano in nessuno dei due totali di lista; Estero resta sempre fuori.", reference: "Separazione dei bacini" },
+      { title: "Soglie di accesso", body: "Sono ammesse le coalizioni con almeno il 10% e almeno una lista ammessa, e le liste con almeno il 3%. Al Senato vale anche l'eccezione del 20% in una regione; sono applicate le tutele previste per le minoranze linguistiche. Nel totale di coalizione contano le liste con almeno l'1%, oltre alle liste di minoranza tutelata; in ogni coalizione ammessa viene recuperata la lista più votata tra quelle altrimenti escluse.", reference: "Art. 83 e art. 16-bis" },
+      { title: "Verifica del premio", body: "Il premio scatta soltanto se lo stesso soggetto ammesso è primo sia alla Camera sia al Senato e raggiunge almeno il 42% in entrambi i rami. Se manca una sola condizione, tutti i 384/189 seggi ordinari restano proporzionali. Se scatta, 70/35 seggi sono riservati al vincitore e il proporzionale scende a 314/154. Il motore applica inoltre i tetti di 220 deputati e 113 senatori, contando gli eventuali seggi speciali del vincitore ma non Estero.", reference: "Premio con verifica congiunta" },
+      { title: "Riparto proporzionale alla Camera", body: "I 384 seggi ordinari, oppure 314 con premio, sono prima distribuiti a livello nazionale tra coalizioni ammesse e liste singole. Formula Hare: quoziente = voti ammessi ÷ seggi; a ogni soggetto spettano prima i quozienti interi e poi i seggi residui in ordine di resto maggiore. I totali nazionali sono quindi restituiti alle circoscrizioni e ai collegi, con compensazioni per conservarli.", reference: "Art. 83 e art. 83-bis" },
+      { title: "Riparto proporzionale al Senato", body: "I 189 seggi ordinari, oppure 154 con premio, sono distribuiti regione per regione con quoziente Hare e resti maggiori, poi ai collegi plurinominali. Il dato nazionale del Senato è la somma dei riparti regionali, non un riparto nazionale autonomo.", reference: "Art. 16-bis e art. 17" },
+      { title: "Territori speciali ed Estero", body: "Per la proposta 2026 gli ordinari collegi uninominali Rosatellum ancora presenti nei CSV non assegnano alcun seggio. Sono elaborati solo i collegi marcati come Valle d'Aosta o Trentino-Alto Adige/Südtirol: negli uninominali vince il candidato con più voti; i seggi proporzionali locali della Camera in Trentino-Alto Adige usano una soglia locale del 20%. Estero viene calcolato a parte in ciascuna delle quattro ripartizioni e i candidati sono ordinati per preferenze.", reference: "Regole speciali; legge 459/2001 per Estero" },
+      { title: "Distribuzione territoriale del premio", body: "I 70 seggi Camera sono distribuiti tra circoscrizioni e i 35 seggi Senato tra regioni in proporzione alla popolazione legale, con quoziente naturale e resti maggiori. Valle d'Aosta e Trentino-Alto Adige sono escluse da questo riparto. Il registro attuale usa la popolazione legale 2021; la data dell'elezione seleziona il dataset e, se manca, viene usata la data della versione di legge, 16 luglio 2026.", reference: "Popolazione legale 2021" },
+      { title: "Proclamazione dei candidati", body: "Dopo aver fissato quanti seggi spettano a ogni lista e collegio, il motore percorre le candidature nell'ordine fornito. Prima tratta le liste prioritarie del premio e i vincitori diretti, poi le liste plurinominali; gestisce le pluricandidature e cerca i sostituti previsti. Se i nomi non bastano, il seggio resta assegnato alla forza politica ma non ha ancora un nominativo.", reference: "Art. 18-bis, 19, 84, 85 e 86" },
+      { title: "Traccia e casi non automatici", body: "Ogni fase scrive nel Debug log regola, totali intermedi e risultato. Se una parità cade sul confine di assegnazione, oppure i dati non bastano per una proclamazione, il motore non inventa uno spareggio: lascia i seggi coinvolti irrisolti e li elenca tra le decisioni non automatiche.", reference: "Debug log e parità irrisolte" }
+    ],
+    methodologyAssumptionsTitle: "4. Assunzioni e limiti dichiarati",
+    methodologyAssumptions: [
+      "La baseline ac-2822-a-2026-07-16 è il testo A.C. 2822-A approvato dalla Camera il 16 luglio 2026 e trasmesso al Senato: è una proposta, non legge vigente.",
+      "Le coalizioni del demo sono ricostruite dai collegamenti tra liste e candidato uninominale presenti nei file 2022. Se modifichi i file, devi mantenere coerenti questi collegamenti.",
+      "La popolazione 2021 è usata come dato prospettico per distribuire il premio della proposta 2026; non corregge il riparto ufficiale del 2022.",
+      "Il file special-territories-2022.json contiene voti di candidato. La tabella dei voti può mostrarli per chiarezza, ma il motore non li trasforma in voti di lista proporzionali.",
+      "I candidati del premio nel demo 2022 sono fittizi, perché nel 2022 quelle liste circoscrizionali non esistevano. Servono solo a mostrare il meccanismo di proclamazione.",
+      "Parità esatte, candidature insufficienti e cascate di subentro non determinabili dai file restano esplicitamente irrisolte. Per questo il simulatore non dichiara una conformità ufficiale completa."
+    ],
+    methodologyReadingTitle: "5. Come leggere e riprodurre un risultato",
+    methodologyReadingBody: "Il numero di seggi assegnati a una forza politica e il numero di parlamentari con nome possono differire: il primo dipende dal riparto, il secondo anche dalla completezza delle liste candidati. Prima di citare un risultato, controlla gli avvisi e il Debug log.",
+    methodologyChecklistTitle: "Annota sempre",
+    methodologyChecklist: ["versione della legge selezionata", "data dell'elezione e data di esecuzione", "nomi e versione dei file caricati", "parità, seggi senza nominativo e altre decisioni non automatiche"],
+    methodologySourcesTitle: "6. Fonti e documentazione verificabile",
+    methodologySourcesIntro: "Le fonti normative e i dati grezzi sono distinti dalle note che documentano la loro traduzione in codice.",
+    methodologySources: [
+      { label: "Camera — scheda A.C. 2822", body: "Iter, testi ed emendamenti del progetto di legge.", href: "https://www.camera.it/leg19/126?idDocumento=2822&leg=19" },
+      { label: "Senato — scheda A.S. 1971", body: "Testo trasmesso e fase parlamentare successiva al voto della Camera.", href: "https://www.senato.it/leggi-e-documenti/disegni-di-legge/scheda-ddl?did=59951" },
+      { label: "Dossier dei Servizi studi", body: "Schede di lettura del 13 aprile 2026: utile per il contesto, ma precedente al testo approvato il 16 luglio.", href: "https://documenti.camera.it/leg19/dossier/testi/AC0469_vol1.htm" },
+      { label: "Ministero dell'Interno — Politiche 2022", body: "Scrutini comunali e liste candidati del dataset demo, licenza CC BY 4.0.", href: "https://www.dati.gov.it/node/view-dataset/dataset?id=caca3eec-122a-4668-a75b-3a2426ce3ae6" },
+      { label: "Gazzetta Ufficiale — popolazione legale 2021", body: "D.P.R. 20 gennaio 2023 e tabelle usate per il dataset demografico.", href: "https://www.gazzettaufficiale.it/eli/gu/2023/03/03/53/so/10/sg/pdf" },
+      { label: "Senato — eletti 2022", body: "Riepilogo ufficiale usato per i collegi speciali del Trentino-Alto Adige/Südtirol.", href: "https://www.senato.it/leg/19/Elettorale/riepilogo.htm" },
+      { label: "Valle d'Aosta — risultati 2022", body: "Portale elettorale regionale usato per i vincitori diretti mancanti dai normali file di importazione.", href: "https://www.regione.vda.it/amministrazione/Elezioni/Dati_e_risultati/elezioni/Mobile/Default_i.aspx?idele=168" },
+      { label: "Nota di implementazione", body: "Mappa regole, assunzioni e limiti del motore nel repository.", href: "https://github.com/SimoneErba/italian-elections-simulator/blob/main/legal-spec/ac-2822-a.md" }
+    ],
     helpTitle: "Come usare il simulatore",
     helpIntro: "Simuliamo la nuova legge partendo dai risultati elettorali: voti di lista, collegi, coalizioni, Estero e liste candidati.",
     helpClose: "Chiudi aiuto",
@@ -256,6 +318,68 @@ const translations = {
     lawRosatellum: "Rosatellum",
     lawComparison: "Compare laws",
     help: "Help",
+    methodology: "How the calculation works: method, assumptions, and sources",
+    methodologyTitle: "From votes to seats, step by step",
+    methodologyIntro: "This guide shows what enters the calculation, which rule is applied, and where every seat goes. The reviewable chain is: law version → input files → implemented rules → allocations → candidate proclamation.",
+    methodologyStatusTitle: "What this result means",
+    methodologyStatusBody: "Running the 2026 Proposal mode on the 2022 vote asks a counterfactual question: “how would those votes have been allocated under these rules?”. It neither reconstructs the official 2022 result nor forecasts a future vote. Rosatellum mode applies the system used in 2022; comparison mode runs both engines on the same files.",
+    methodologyInputsTitle: "1. Data entering the engine",
+    methodologyInputsIntro: "Each file has a distinct role, and the engine keeps quantities separate when the law does.",
+    methodologyInputItems: [
+      { label: "List votes", body: "The two municipal-results CSV files provide VOTI LISTE, list, district, and constituency. They feed thresholds, the bonus check, and proportional allocations." },
+      { label: "Geography and capacity", body: "The 2022 districts identify territories; for the 2026 proposal, their capacities are replaced by the versioned 314/384 Chamber and 154/189 Senate tables, depending on whether the bonus is awarded." },
+      { label: "Candidates", body: "Candidate CSV files provide the order of multi-member lists. A separate bonus file provides the order of bonus candidates. Names do not alter the number of seats assigned to a political subject." },
+      { label: "Separate pools", body: "Foreign and special territories have their own files and rules. Direct candidate tallies in special territories are not list votes and are never added to the proportional vote." }
+    ],
+    methodologyPoolsTitle: "2. First rule: the seat pools",
+    methodologyPoolsIntro: "Bonus seats are not added to Parliament: they are removed from the ordinary proportional pool. The three pools—ordinary Italy, special territories, and Foreign—remain separate.",
+    methodologyPoolHeaders: ["Chamber", "Total", "Foreign", "Special", "Ordinary, no bonus", "Proportional with bonus", "Bonus"],
+    methodologyPoolRows: [
+      ["Chamber of Deputies", "400", "8", "8", "384", "314", "70"],
+      ["Senate of the Republic", "200", "4", "7", "189", "154", "35"]
+    ],
+    methodologyPoolFormula: "Total check: 384 + 8 + 8 = 400 in the Chamber; 189 + 7 + 4 = 200 in the Senate. With a bonus: 314 + 70 = 384 and 154 + 35 = 189.",
+    methodologyAlgorithmTitle: "3. The 2026 proposal algorithm",
+    methodologyAlgorithmIntro: "The Chamber and Senate are calculated separately, except for the joint test required to award the bonus.",
+    methodologyHareExampleTitle: "Minimal Hare-method example",
+    methodologyHareExampleBody: "With 1,000,000 admitted votes and 10 seats, the quotient is 100,000. A subject with 260,000 votes immediately receives 2 integer seats and keeps a remainder of 60,000. After all integer seats are assigned, any seats still available go to the largest remainders.",
+    methodologyAlgorithmSteps: [
+      { title: "Validation and normalization", body: "The engine checks duplicate IDs, links among lists, coalitions, and territories, chamber consistency, dates, negative votes, and the Foreign structure. Municipal rows are then summed with integer arithmetic, with no rounding of votes.", reference: "Input controls" },
+      { title: "Building two vote totals", body: "The ordinary total excludes Foreign and special territories and is used for thresholds and proportional seats. A second total, used only for the bonus test, also includes special-territory list votes. Personal candidate tallies from special districts enter neither list total; Foreign always remains outside.", reference: "Separation of pools" },
+      { title: "Access thresholds", body: "Coalitions require at least 10% and at least one admitted list; lists require at least 3%. The Senate also has a 20% exception in one region, and protected linguistic minorities receive the implemented statutory treatment. A coalition's vote includes lists with at least 1%, plus protected-minority lists; within each admitted coalition, the strongest otherwise excluded list is recovered.", reference: "Article 83 and Article 16-bis" },
+      { title: "Bonus test", body: "The bonus is awarded only when the same admitted subject ranks first in both chambers and reaches at least 42% in each. If any condition fails, all 384/189 ordinary seats remain proportional. If it passes, 70/35 seats are reserved for the winner and the proportional pools fall to 314/154. The engine also applies caps of 220 deputies and 113 senators, counting the winner's special-territory seats but not Foreign.", reference: "Joint bonus test" },
+      { title: "Chamber proportional allocation", body: "The 384 ordinary seats, or 314 with a bonus, are first allocated nationally among admitted coalitions and standalone lists. Hare formula: quotient = admitted votes ÷ seats; each subject first receives its integer quotients, then remaining seats by largest remainder. National totals are then returned to constituencies and districts, with compensation to preserve them.", reference: "Article 83 and Article 83-bis" },
+      { title: "Senate proportional allocation", body: "The 189 ordinary seats, or 154 with a bonus, are allocated region by region with the Hare quotient and largest remainders, then to multi-member districts. The national Senate figure is the sum of the regional allocations, not a separate national allocation.", reference: "Article 16-bis and Article 17" },
+      { title: "Special territories and Foreign", body: "Under the 2026 proposal, ordinary Rosatellum single-member districts still present in the CSV files award no seat. Only districts marked Valle d'Aosta or Trentino-Alto Adige/Südtirol are processed: the highest-vote candidate wins special single-member districts; the Chamber's local proportional Trentino seats use a 20% local threshold. Foreign is calculated separately in each of four partitions and candidates are ranked by preferences.", reference: "Special rules; Law 459/2001 for Foreign" },
+      { title: "Territorial distribution of the bonus", body: "The 70 Chamber seats are distributed among constituencies and the 35 Senate seats among regions in proportion to legal population, using a natural quotient and largest remainders. Valle d'Aosta and Trentino-Alto Adige are excluded. The current registry uses the 2021 legal population; the election date selects the dataset, falling back to the law-version date, 16 July 2026, when missing.", reference: "2021 legal population" },
+      { title: "Candidate proclamation", body: "After seats per list and district are fixed, the engine walks nominations in the supplied order. It processes bonus priority lists and direct winners first, then multi-member lists; it handles multiple nominations and searches the implemented substitute sequence. When names run out, the seat remains assigned to the political subject but has no named member yet.", reference: "Articles 18-bis, 19, 84, 85, and 86" },
+      { title: "Trace and non-automatic cases", body: "Every phase writes its rule, intermediate totals, and outcome to the Debug log. When an exact tie falls on an allocation boundary, or the input cannot determine a proclamation, the engine does not invent a tie-break: affected seats remain unresolved and are listed as non-automatic decisions.", reference: "Debug log and unresolved ties" }
+    ],
+    methodologyAssumptionsTitle: "4. Declared assumptions and limits",
+    methodologyAssumptions: [
+      "The ac-2822-a-2026-07-16 baseline is A.C. 2822-A as approved by the Chamber on 16 July 2026 and transmitted to the Senate: it is a proposal, not current law.",
+      "Demo coalitions are reconstructed from links between lists and single-member candidates in the 2022 files. Edited files must preserve those links consistently.",
+      "The 2021 population is used prospectively to distribute the 2026 proposal's bonus; it does not correct the official 2022 allocation.",
+      "special-territories-2022.json contains candidate votes. The vote table may show them for clarity, but the engine does not convert them into proportional list votes.",
+      "Bonus candidates in the 2022 demo are fictional because those constituency-level bonus lists did not exist in 2022. They only demonstrate the proclamation mechanism.",
+      "Exact ties, insufficient candidacies, and substitution cascades that the input cannot determine remain explicitly unresolved. The simulator therefore does not claim complete official conformity."
+    ],
+    methodologyReadingTitle: "5. Reading and reproducing a result",
+    methodologyReadingBody: "Seats assigned to a political subject and seats with a named member may differ: allocation determines the former, while the latter also depends on candidate-file completeness. Check warnings and the Debug log before citing a result.",
+    methodologyChecklistTitle: "Always record",
+    methodologyChecklist: ["selected law version", "election date and run date", "names and versions of every input file", "ties, unnamed seats, and other non-automatic decisions"],
+    methodologySourcesTitle: "6. Verifiable sources and documentation",
+    methodologySourcesIntro: "Legislative and raw-data sources are kept distinct from the notes documenting how they were translated into code.",
+    methodologySources: [
+      { label: "Chamber — A.C. 2822 bill page", body: "Legislative progress, texts, and amendments.", href: "https://www.camera.it/leg19/126?idDocumento=2822&leg=19" },
+      { label: "Senate — A.S. 1971 bill page", body: "Transmitted text and the parliamentary stage after the Chamber vote.", href: "https://www.senato.it/leggi-e-documenti/disegni-di-legge/scheda-ddl?did=59951" },
+      { label: "Parliamentary research dossier", body: "Reading notes dated 13 April 2026: useful context, but earlier than the text approved on 16 July.", href: "https://documenti.camera.it/leg19/dossier/testi/AC0469_vol1.htm" },
+      { label: "Interior Ministry — 2022 election", body: "Municipal returns and candidate lists used by the demo, under CC BY 4.0.", href: "https://www.dati.gov.it/node/view-dataset/dataset?id=caca3eec-122a-4668-a75b-3a2426ce3ae6" },
+      { label: "Official Gazette — 2021 legal population", body: "Presidential Decree of 20 January 2023 and tables used for the population dataset.", href: "https://www.gazzettaufficiale.it/eli/gu/2023/03/03/53/so/10/sg/pdf" },
+      { label: "Senate — members elected in 2022", body: "Official summary used for special districts in Trentino-Alto Adige/Südtirol.", href: "https://www.senato.it/leg/19/Elettorale/riepilogo.htm" },
+      { label: "Valle d'Aosta — 2022 results", body: "Regional election portal used for direct winners missing from the ordinary import files.", href: "https://www.regione.vda.it/amministrazione/Elezioni/Dati_e_risultati/elezioni/Mobile/Default_i.aspx?idele=168" },
+      { label: "Implementation note", body: "Mapping of rules, assumptions, and engine limits in the repository.", href: "https://github.com/SimoneErba/italian-elections-simulator/blob/main/legal-spec/ac-2822-a.md" }
+    ],
     helpTitle: "How to use the simulator",
     helpIntro: "We simulate the new law from election results: list votes, districts, coalitions, foreign seats, and candidate lists.",
     helpClose: "Close help",
@@ -527,6 +651,103 @@ export function ResultsPage() {
               ) : null}
             </div>
           </div>
+          <details className="methodologyGuide">
+            <summary>{t.methodology}</summary>
+            <div className="methodologyBody">
+              <header className="methodologyHeader">
+                <h2>{t.methodologyTitle}</h2>
+                <p>{t.methodologyIntro}</p>
+                <aside className="methodologyStatus">
+                  <h3>{t.methodologyStatusTitle}</h3>
+                  <p>{t.methodologyStatusBody}</p>
+                </aside>
+              </header>
+
+              <section className="methodologySection" aria-labelledby="methodology-inputs-title">
+                <h3 id="methodology-inputs-title">{t.methodologyInputsTitle}</h3>
+                <p>{t.methodologyInputsIntro}</p>
+                <dl className="methodologyInputGrid">
+                  {t.methodologyInputItems.map((item) => (
+                    <div key={item.label}>
+                      <dt>{item.label}</dt>
+                      <dd>{item.body}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+
+              <section className="methodologySection" aria-labelledby="methodology-pools-title">
+                <h3 id="methodology-pools-title">{t.methodologyPoolsTitle}</h3>
+                <p>{t.methodologyPoolsIntro}</p>
+                <div className="methodologyTableScroller">
+                  <table className="methodologyPoolTable">
+                    <thead>
+                      <tr>{t.methodologyPoolHeaders.map((header) => <th key={header} scope="col">{header}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {t.methodologyPoolRows.map((row) => (
+                        <tr key={row[0]}>
+                          {row.map((cell, index) => index === 0
+                            ? <th key={cell} scope="row">{cell}</th>
+                            : <td key={`${row[0]}-${index}`}>{cell}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="methodologyFormula">{t.methodologyPoolFormula}</p>
+              </section>
+
+              <section className="methodologySection" aria-labelledby="methodology-algorithm-title">
+                <h3 id="methodology-algorithm-title">{t.methodologyAlgorithmTitle}</h3>
+                <p>{t.methodologyAlgorithmIntro}</p>
+                <div className="methodologyExample">
+                  <strong>{t.methodologyHareExampleTitle}</strong>
+                  <span>{t.methodologyHareExampleBody}</span>
+                </div>
+                <ol className="methodologySteps">
+                  {t.methodologyAlgorithmSteps.map((step) => (
+                    <li key={step.title}>
+                      <div>
+                        <strong>{step.title}</strong>
+                        <p>{step.body}</p>
+                        <small>{step.reference}</small>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+
+              <section className="methodologySection" aria-labelledby="methodology-assumptions-title">
+                <h3 id="methodology-assumptions-title">{t.methodologyAssumptionsTitle}</h3>
+                <ul className="methodologyAssumptions">
+                  {t.methodologyAssumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+                </ul>
+              </section>
+
+              <section className="methodologySection" aria-labelledby="methodology-reading-title">
+                <h3 id="methodology-reading-title">{t.methodologyReadingTitle}</h3>
+                <p>{t.methodologyReadingBody}</p>
+                <div className="methodologyChecklist">
+                  <strong>{t.methodologyChecklistTitle}</strong>
+                  <ul>{t.methodologyChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+                </div>
+              </section>
+
+              <section className="methodologySection" aria-labelledby="methodology-sources-title">
+                <h3 id="methodology-sources-title">{t.methodologySourcesTitle}</h3>
+                <p>{t.methodologySourcesIntro}</p>
+                <ul className="methodologySources">
+                  {t.methodologySources.map((source) => (
+                    <li key={source.href}>
+                      <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a>
+                      <span>{source.body}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
+          </details>
           {showMainMenu ? <section className="simulationSetup" aria-labelledby="simulation-setup-title">
             <div className="setupHeading">
               <h2 id="simulation-setup-title">{t.workflowTitle}</h2>
