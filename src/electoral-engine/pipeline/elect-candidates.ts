@@ -115,9 +115,10 @@ export function electCandidates(
     }
   }
 
-  // If a district list is exhausted, use the statutory replacement chain to
-  // keep the allocation's seat count intact.
-  const proportional = assignProportionalCandidates(input, proportionalDemands, electedByCandidate, true);
+  // Full allocations supply threshold results and can use the statutory
+  // cross-district replacement chain.  Keep the local-list behavior for
+  // direct callers that do not provide allocation context.
+  const proportional = assignProportionalCandidates(input, proportionalDemands, electedByCandidate, Boolean(thresholds));
   elected.push(...proportional.elected);
   seatTrace.push(...proportional.seatTrace);
   ties.push(...proportional.ties);
