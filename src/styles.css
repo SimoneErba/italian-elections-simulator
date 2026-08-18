@@ -129,12 +129,8 @@ button:disabled {
 
 .appShell {
   margin: 0 auto;
-  max-width: 1180px;
-  padding: 2rem;
-}
-
-.appShell.comparisonLayout {
   max-width: 1800px;
+  padding: 2rem;
 }
 
 .topbar {
@@ -666,6 +662,133 @@ h1 {
 .helpList div {
   border-top: 1px solid var(--border-soft);
   padding-top: 0.75rem;
+}
+
+.reportActions {
+  bottom: 1rem;
+  display: flex;
+  gap: 0.55rem;
+  left: 1rem;
+  position: fixed;
+  z-index: 10;
+}
+
+.reportButton {
+  background: var(--primary);
+  border-color: var(--primary);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  color: var(--primary-text);
+}
+
+.reportButton:hover {
+  background: var(--primary-hover);
+}
+
+.iconButton {
+  align-items: center;
+  display: inline-flex;
+  font-size: 1.15rem;
+  height: 2.9rem;
+  justify-content: center;
+  padding: 0;
+  width: 2.9rem;
+}
+
+.topbarControls .iconButton svg {
+  display: block;
+  fill: none;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 1.25rem;
+}
+
+.githubButton {
+  text-decoration: none;
+}
+
+.githubButton svg {
+  fill: currentColor;
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.reportDialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  display: grid;
+  gap: 1rem;
+  max-width: 580px;
+  padding: 1.25rem;
+  width: min(100%, 580px);
+}
+
+.reportDialogHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.reportDialogHeader h2,
+.reportDialogHeader p {
+  margin: 0;
+}
+
+.reportDialogHeader h2 {
+  font-size: 1.25rem;
+}
+
+.reportDialogHeader p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.reportDialog > label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.reportDialog input:not([type="checkbox"]),
+.reportDialog textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  width: 100%;
+}
+
+.reportDialog textarea {
+  resize: vertical;
+}
+
+.reportError {
+  color: var(--alert-text);
+  margin: 0;
+}
+
+.reportSuccess {
+  background: var(--surface-muted);
+  border-left: 4px solid var(--primary);
+  border-radius: 6px;
+  color: var(--text);
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.85rem 1rem;
+}
+
+.reportDialogActions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
 }
 
 .helpList dt {

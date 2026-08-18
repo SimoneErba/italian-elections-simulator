@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { formatBigInt, formatPercent, percentage } from "../../electoral-engine/arithmetic/fraction";
 import type { Chamber } from "../../electoral-engine/domain/chamber";
 import type { Candidate, ElectoralLawVersionId, ElectionInput, ElectionSimulationResult } from "../../electoral-engine/domain/election";
@@ -43,6 +43,13 @@ const sampleDataFiles = [
   { url: foreignElectionUrl, name: "estero.json" },
   { url: specialTerritoriesUrl, name: "special-territories-2022.json" }
 ] as const;
+
+const formspreeFormIdByReportKind: Record<ReportKind, string> = {
+  feedback: "xjybpeyv",
+  bug: "xyegbdej"
+};
+
+type ReportKind = "bug" | "feedback";
 
 const translations = {
   it: {
@@ -92,6 +99,20 @@ const translations = {
     lawRosatellum: "Rosatellum",
     lawComparison: "Confronta le leggi",
     help: "Aiuto",
+    reportBug: "Segnala un bug",
+    giveFeedback: "Invia feedback",
+    viewOnGitHub: "Vedi su GitHub",
+    bugReportTitle: "Segnala un bug",
+    feedbackReportTitle: "Invia feedback",
+    reportSubject: "Oggetto",
+    reportDescription: "Descrizione",
+    reportEmail: "La tua email (facoltativa)",
+    reportCancel: "Annulla",
+    reportSend: "Invia segnalazione",
+    reportPreparing: "Invio della segnalazione...",
+    reportSendFailed: "Non è stato possibile inviare la segnalazione. Riprova tra poco.",
+    reportSent: "Grazie, la segnalazione è stata inviata.",
+    reportClose: "Chiudi",
     methodology: "Come funziona il calcolo: metodo, ipotesi e fonti",
     methodologyTitle: "Dal voto al seggio, passo per passo",
     methodologyIntro: "Qui puoi controllare che cosa entra nel calcolo, quale regola viene applicata e dove finisce ogni seggio. La catena verificabile è: versione della legge → file di input → regole implementate → riparti → proclamazione.",
@@ -318,6 +339,20 @@ const translations = {
     lawRosatellum: "Rosatellum",
     lawComparison: "Compare laws",
     help: "Help",
+    reportBug: "Report a bug",
+    giveFeedback: "Send feedback",
+    viewOnGitHub: "View on GitHub",
+    bugReportTitle: "Report a bug",
+    feedbackReportTitle: "Send feedback",
+    reportSubject: "Subject",
+    reportDescription: "Description",
+    reportEmail: "Your email (optional)",
+    reportCancel: "Cancel",
+    reportSend: "Send report",
+    reportPreparing: "Sending report...",
+    reportSendFailed: "Unable to send the report. Please try again shortly.",
+    reportSent: "Thanks, your report has been sent.",
+    reportClose: "Close",
     methodology: "How the calculation works: method, assumptions, and sources",
     methodologyTitle: "From votes to seats, step by step",
     methodologyIntro: "This guide shows what enters the calculation, which rule is applied, and where every seat goes. The reviewable chain is: law version → input files → implemented rules → allocations → candidate proclamation.",
@@ -519,6 +554,7 @@ export function ResultsPage() {
   const [displayedSimulationMode, setDisplayedSimulationMode] = useState<SimulationMode>("2026");
   const [showMainMenu, setShowMainMenu] = useState(() => !results);
   const [showCustomData, setShowCustomData] = useState(false);
+  const [reportKind, setReportKind] = useState<ReportKind>();
   const t = translations[language];
   const themeToggleLabel = darkTheme ? t.themeLight : t.themeDark;
   const subtitle = t.lead;
@@ -564,7 +600,7 @@ export function ResultsPage() {
         files.push({ name: file.name, data: new Uint8Array(await response.arrayBuffer()) });
         await nextFrame();
       }
-      downloadBlob(buildZip(files), "dati-2022.zip");
+      downloadBlob(await buildZip(files), "dati-2022.zip");
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : t.sampleDownloadFailed);
     } finally {
@@ -622,7 +658,7 @@ export function ResultsPage() {
   }
 
   return (
-    <main className={`appShell${displayedSimulationMode === "comparison" ? " comparisonLayout" : ""}`}>
+    <main className="appShell">
       <section className="topbar">
         <div className="topbarContent">
           <div className="topbarHeader">
@@ -631,6 +667,19 @@ export function ResultsPage() {
               <p className="topbarLead">{subtitle}</p>
             </div>
             <div className="topbarControls">
+              {results && !showMainMenu ? (
+                <button
+                  type="button"
+                  className="secondaryButton iconButton"
+                  onClick={() => setShowMainMenu(true)}
+                  aria-label={t.backToMainMenu}
+                  title={t.backToMainMenu}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="secondaryButton languageButton"
@@ -644,11 +693,6 @@ export function ResultsPage() {
                 {darkTheme ? "☀" : "☾"}
                 <span className="visuallyHidden">{themeToggleLabel}</span>
               </button>
-              {results && !showMainMenu ? (
-                <button type="button" className="secondaryButton" onClick={() => setShowMainMenu(true)}>
-                  {t.backToMainMenu}
-                </button>
-              ) : null}
             </div>
           </div>
           <details className="methodologyGuide">
@@ -828,8 +872,133 @@ export function ResultsPage() {
           })}
         </section>
       ) : null}
+
+      <div className="reportActions" aria-label={language === "it" ? "Contatta il progetto" : "Contact the project"}>
+        <button type="button" className="reportButton iconButton" onClick={() => setReportKind("bug")} aria-label={t.reportBug} title={t.reportBug}>🐞</button>
+        <button type="button" className="reportButton iconButton" onClick={() => setReportKind("feedback")} aria-label={t.giveFeedback} title={t.giveFeedback}>💬</button>
+        <a className="reportButton githubButton iconButton" href="https://github.com/SimoneErba/italian-elections-simulator" target="_blank" rel="noreferrer" aria-label={t.viewOnGitHub} title={t.viewOnGitHub}>
+          <svg aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+            <path d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.63 5.47 7.71.4.08.55-.18.55-.4 0-.2-.01-.86-.01-1.55-2.01.38-2.53-.5-2.69-.96-.09-.24-.48-.97-.82-1.17-.28-.16-.68-.56-.01-.57.63-.01 1.08.59 1.23.83.72 1.23 1.87.89 2.33.68.07-.53.28-.89.51-1.09-1.78-.21-3.64-.91-3.64-4.03 0-.89.31-1.62.82-2.19-.08-.21-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.47 7.47 0 0 1 8 4.85c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.95.08 2.16.51.57.82 1.29.82 2.19 0 3.13-1.87 3.82-3.65 4.03.29.25.54.72.54 1.46 0 1.06-.01 1.91-.01 2.18 0 .22.15.48.55.4A8.03 8.03 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z" />
+          </svg>
+        </a>
+      </div>
+
+      {reportKind ? (
+        <ReportDialog
+          key={reportKind}
+          kind={reportKind}
+          t={t}
+          onClose={() => setReportKind(undefined)}
+          onSent={() => setNotice(t.reportSent)}
+        />
+      ) : null}
     </main>
   );
+}
+
+function ReportDialog({
+  kind,
+  t,
+  onClose,
+  onSent
+}: {
+  kind: ReportKind;
+  t: Translation;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string>();
+  const title = kind === "bug" ? t.bugReportTitle : t.feedbackReportTitle;
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  async function submitReport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(undefined);
+    setSubmitting(true);
+
+    try {
+      const form = new FormData(event.currentTarget);
+      const subject = String(form.get("subject") ?? "").trim();
+      const description = String(form.get("description") ?? "").trim();
+      const replyEmail = String(form.get("email") ?? "").trim();
+      const submission = new FormData();
+      submission.append("email", replyEmail);
+      submission.append("subject", subject);
+      submission.append("message", description);
+      submission.append("report_type", kind);
+      const response = await fetch(`https://formspree.io/f/${formspreeFormIdByReportKind[kind]}`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: submission
+      });
+      if (!response.ok) throw new Error(await formspreeErrorMessage(response, t.reportSendFailed));
+      onSent();
+      setSubmitted(true);
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : t.reportSendFailed);
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="dialogBackdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget && !submitting) onClose();
+    }}>
+      <form className="reportDialog" aria-modal="true" aria-labelledby="report-dialog-title" role="dialog" onSubmit={(event) => void submitReport(event)}>
+        <div className="reportDialogHeader">
+          <div>
+            <h2 id="report-dialog-title">{title}</h2>
+          </div>
+          <button type="button" className="secondaryButton helpCloseButton" onClick={onClose} disabled={submitting} aria-label={t.reportCancel}>×</button>
+        </div>
+        {submitted ? (
+          <>
+            <p className="reportSuccess" role="status">{t.reportSent}</p>
+            <div className="reportDialogActions">
+              <button type="button" onClick={onClose}>{t.reportClose}</button>
+            </div>
+          </>
+        ) : <>
+          <label>
+            <span>{t.reportSubject}</span>
+            <input name="subject" required autoFocus />
+          </label>
+          <label>
+            <span>{t.reportDescription}</span>
+            <textarea name="description" required rows={6} />
+          </label>
+          <label>
+            <span>{t.reportEmail}</span>
+            <input name="email" type="email" />
+          </label>
+          {error ? <p className="reportError" role="alert">{error}</p> : null}
+          <div className="reportDialogActions">
+            <button type="button" className="secondaryButton" onClick={onClose} disabled={submitting}>{t.reportCancel}</button>
+            <button type="submit" disabled={submitting}>{submitting ? t.reportPreparing : t.reportSend}</button>
+          </div>
+        </>}
+      </form>
+    </div>
+  );
+}
+
+async function formspreeErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const payload = await response.json() as { errors?: Array<{ message?: unknown }> };
+    const message = payload.errors?.map((error) => error.message).find((value): value is string => typeof value === "string");
+    return message ?? fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function SimulationReport({
@@ -1101,20 +1270,26 @@ type ZipFile = {
   data: Uint8Array<ArrayBuffer>;
 };
 
-function buildZip(files: ZipFile[]): Blob {
+type PreparedZipFile = ZipFile & {
+  compressedData: Uint8Array<ArrayBuffer>;
+  compressionMethod: 0 | 8;
+};
+
+async function buildZip(files: ZipFile[]): Promise<Blob> {
   const encoder = new TextEncoder();
   const localParts: Array<Uint8Array<ArrayBuffer>> = [];
   const centralParts: Array<Uint8Array<ArrayBuffer>> = [];
   let offset = 0;
 
   for (const file of files) {
+    const preparedFile = await prepareZipFile(file);
     const name = encoder.encode(file.name);
     const crc = crc32(file.data);
-    const localHeader = createZipLocalHeader(name, crc, file.data.length);
-    const centralHeader = createZipCentralHeader(name, crc, file.data.length, offset);
-    localParts.push(localHeader, file.data);
+    const localHeader = createZipLocalHeader(name, crc, preparedFile.compressedData.length, file.data.length, preparedFile.compressionMethod);
+    const centralHeader = createZipCentralHeader(name, crc, preparedFile.compressedData.length, file.data.length, preparedFile.compressionMethod, offset);
+    localParts.push(localHeader, preparedFile.compressedData);
     centralParts.push(centralHeader);
-    offset += localHeader.byteLength + file.data.byteLength;
+    offset += localHeader.byteLength + preparedFile.compressedData.byteLength;
   }
 
   const centralDirectorySize = centralParts.reduce((sum, part) => sum + part.byteLength, 0);
@@ -1122,35 +1297,61 @@ function buildZip(files: ZipFile[]): Blob {
   return new Blob([...localParts, ...centralParts, endRecord], { type: "application/zip" });
 }
 
-function createZipLocalHeader(name: Uint8Array<ArrayBuffer>, crc: number, size: number): Uint8Array<ArrayBuffer> {
+async function prepareZipFile(file: ZipFile): Promise<PreparedZipFile> {
+  if (typeof CompressionStream === "undefined") {
+    return { ...file, compressedData: file.data, compressionMethod: 0 };
+  }
+  const compressedBuffer = await new Response(
+    new Blob([file.data]).stream().pipeThrough(new CompressionStream("deflate-raw"))
+  ).arrayBuffer();
+  const compressedData = new Uint8Array(compressedBuffer);
+  return compressedData.length < file.data.length
+    ? { ...file, compressedData, compressionMethod: 8 }
+    : { ...file, compressedData: file.data, compressionMethod: 0 };
+}
+
+function createZipLocalHeader(
+  name: Uint8Array<ArrayBuffer>,
+  crc: number,
+  compressedSize: number,
+  uncompressedSize: number,
+  compressionMethod: 0 | 8
+): Uint8Array<ArrayBuffer> {
   const header = new Uint8Array(30 + name.length);
   const view = new DataView(header.buffer);
   view.setUint32(0, 0x04034b50, true);
   view.setUint16(4, 20, true);
   view.setUint16(6, 0, true);
-  view.setUint16(8, 0, true);
+  view.setUint16(8, compressionMethod, true);
   writeZipTimestamp(view, 10);
   view.setUint32(14, crc, true);
-  view.setUint32(18, size, true);
-  view.setUint32(22, size, true);
+  view.setUint32(18, compressedSize, true);
+  view.setUint32(22, uncompressedSize, true);
   view.setUint16(26, name.length, true);
   view.setUint16(28, 0, true);
   header.set(name, 30);
   return header;
 }
 
-function createZipCentralHeader(name: Uint8Array<ArrayBuffer>, crc: number, size: number, localOffset: number): Uint8Array<ArrayBuffer> {
+function createZipCentralHeader(
+  name: Uint8Array<ArrayBuffer>,
+  crc: number,
+  compressedSize: number,
+  uncompressedSize: number,
+  compressionMethod: 0 | 8,
+  localOffset: number
+): Uint8Array<ArrayBuffer> {
   const header = new Uint8Array(46 + name.length);
   const view = new DataView(header.buffer);
   view.setUint32(0, 0x02014b50, true);
   view.setUint16(4, 20, true);
   view.setUint16(6, 20, true);
   view.setUint16(8, 0, true);
-  view.setUint16(10, 0, true);
+  view.setUint16(10, compressionMethod, true);
   writeZipTimestamp(view, 12);
   view.setUint32(16, crc, true);
-  view.setUint32(20, size, true);
-  view.setUint32(24, size, true);
+  view.setUint32(20, compressedSize, true);
+  view.setUint32(24, uncompressedSize, true);
   view.setUint16(28, name.length, true);
   view.setUint16(30, 0, true);
   view.setUint16(32, 0, true);
