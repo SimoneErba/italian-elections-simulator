@@ -1,6 +1,7 @@
 import type { ElectoralLawVersionId, ElectionInput, ElectionSimulationResult } from "../electoral-engine/domain/election";
 import type { OnDataImportFiles } from "../datasets/loaders/ondata-2022-loader";
 import type { SimulationWorkerRequest, SimulationWorkerResponse } from "./simulation-worker";
+import type { SimplifiedScenarioRequest } from "../features/simple-scenario/types";
 
 export type SimulationBundle = {
   scenario: ElectionInput;
@@ -9,7 +10,8 @@ export type SimulationBundle = {
 
 type SimulationRequestPayload =
   | { kind: "scenario"; scenario: ElectionInput; lawVersions: ElectoralLawVersionId[] }
-  | { kind: "ondata"; files: OnDataImportFiles; lawVersions: ElectoralLawVersionId[] };
+  | { kind: "ondata"; files: OnDataImportFiles; lawVersions: ElectoralLawVersionId[] }
+  | { kind: "simplified"; simplified: SimplifiedScenarioRequest; lawVersions: ElectoralLawVersionId[] };
 
 let nextRequestId = 1;
 let worker: Worker | undefined;
@@ -24,6 +26,10 @@ export function simulateScenarioInWorker(scenario: ElectionInput, lawVersions: E
 
 export function loadOnDataInWorker(files: OnDataImportFiles, lawVersions: ElectoralLawVersionId[]): Promise<SimulationBundle> {
   return send({ kind: "ondata", files, lawVersions });
+}
+
+export function simulateSimplifiedScenarioInWorker(simplified: SimplifiedScenarioRequest, lawVersions: ElectoralLawVersionId[]): Promise<SimulationBundle> {
+  return send({ kind: "simplified", simplified, lawVersions });
 }
 
 function send(request: SimulationRequestPayload): Promise<SimulationBundle> {

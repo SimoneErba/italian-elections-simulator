@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import type { ElectoralLawVersionId, ElectionInput, ElectionSimulationResult } from "../electoral-engine/domain/election";
 import type { OnDataImportFiles } from "../datasets/loaders/ondata-2022-loader";
-import { loadOnDataInWorker, simulateScenarioInWorker } from "./simulation-client";
+import { loadOnDataInWorker, simulateScenarioInWorker, simulateSimplifiedScenarioInWorker } from "./simulation-client";
+import type { SimplifiedScenarioRequest } from "../features/simple-scenario/types";
 import cameraCandidateListUrl from "../../data/input/camera-2022-candidatilista.csv?url";
 import cameraScrutiniUrl from "../../data/input/Politiche2022_Scrutini_Camera_Italia.csv?url";
 import senateCandidateListUrl from "../../data/input/senato-2022-candlista.csv?url";
@@ -15,6 +16,7 @@ type AppState = {
   results?: Partial<Record<ElectoralLawVersionId, ElectionSimulationResult>>;
   loadScenario: (scenario: ElectionInput, lawVersions: ElectoralLawVersionId[]) => Promise<void>;
   loadOnDataFiles: (files: OnDataImportFiles, lawVersions: ElectoralLawVersionId[]) => Promise<void>;
+  loadSimplifiedScenario: (simplified: SimplifiedScenarioRequest, lawVersions: ElectoralLawVersionId[]) => Promise<void>;
   loadFixture: (lawVersions: ElectoralLawVersionId[]) => Promise<void>;
 };
 
@@ -25,6 +27,10 @@ export const useAppStore = create<AppState>((set) => ({
   },
   loadOnDataFiles: async (files, lawVersions) => {
     const bundle = await loadOnDataInWorker(files, lawVersions);
+    set(bundle);
+  },
+  loadSimplifiedScenario: async (simplified, lawVersions) => {
+    const bundle = await simulateSimplifiedScenarioInWorker(simplified, lawVersions);
     set(bundle);
   },
   loadFixture: async (lawVersions) => {

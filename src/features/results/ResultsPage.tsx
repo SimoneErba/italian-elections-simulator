@@ -14,9 +14,13 @@ import senateScrutiniUrl from "../../../data/input/Politiche2022_Scrutini_Senato
 import bonusCandidateListsUrl from "../../../data/input/bonus-candidates-2022-random.csv?url";
 import foreignElectionUrl from "../../../data/input/estero.json?url";
 import specialTerritoriesUrl from "../../../data/input/special-territories-2022.json?url";
+import { defaultSimplifiedCoalitions, defaultSimplifiedPercentages, simplifiedListCatalog } from "../simple-scenario/catalog";
+import type { SimplifiedCoalition, SimplifiedList, SimplifiedScenarioRequest } from "../simple-scenario/types";
 
 type Language = "it" | "en";
 type SimulationMode = "2026" | "rosatellum" | "comparison";
+type EditingMode = "simple" | "advanced";
+type StartingData = "2022" | "custom";
 type ReportSection = "national" | "arcs" | "bonus" | "members" | "constituencies" | "debug";
 
 const defaultReportSectionOpen: Record<ReportSection, boolean> = {
@@ -69,17 +73,17 @@ const translations = {
     sampleDownloadFailed: "Download dei dati 2022 non riuscito.",
     title: "Simulatore elettorale italiano",
     lead: "Simula l'assegnazione dei seggi parlamentari con la proposta 2026, il Rosatellum o un confronto tra i due sistemi.",
-    loadDemo: "Simula con i dati 2022",
+    loadDemo: "Simula",
     backToMainMenu: "Torna al menu principale",
     demoLoadedRandomBonus: "Dati 2022 caricati. La lista premio usa candidati fittizi, perche' non esisteva nel 2022.",
     downloadSample: "Scarica ZIP dati 2022",
     importJsonCsv: "Personalizza i dati",
     workflowTitle: "Crea una simulazione",
-    workflowLead: "Usa direttamente i risultati delle elezioni 2022 oppure modifica voti e candidati.",
+    workflowLead: "Scegli prima le regole, poi quanto dettaglio vuoi modificare e infine i dati da cui partire.",
     stepOneTitle: "Scegli la modalita",
     stepOneBody: "La modalita stabilisce le regole della simulazione. Confronta le leggi mostra gli effetti dei due sistemi affiancati.",
     stepTwoTitle: "2. Prepara i dati",
-    stepTwoBody: "Scarica il set di esempio, estrailo e modifica le copie locali. I dati 2022 sono un punto di partenza: il simulatore non modifica mai i tuoi file.",
+    stepTwoBody: "Scarica il set di esempio, estrailo e modifica le copie locali. I dati 2022 sono un punto di partenza.",
     stepThreeTitle: "3. Carica e calcola",
     stepThreeBody: "Seleziona tutti i file necessari nello stesso momento. Il simulatore riconosce automaticamente il ruolo di ogni file e mostra i risultati dopo il controllo dei dati.",
     requiredFiles: "Quali file devo caricare?",
@@ -94,10 +98,19 @@ const translations = {
     downloadAndEdit: "Scarica i file da modificare",
     importAllFiles: "Carica i file e simula",
     demoAlternative: "I risultati 2022 sono pronti: avvia subito la simulazione oppure personalizza i file.",
-    simulationMode: "Modalita di simulazione",
+    simulationMode: "Legge elettorale",
     law2026: "Proposta 2026",
     lawRosatellum: "Rosatellum",
     lawComparison: "Confronta le leggi",
+    editingMode: "Modalità",
+    simpleMode: "Semplice",
+    advancedMode: "Avanzata",
+    simpleModeBody: "Modifica rapidamente i voti delle liste senza intervenire sui candidati o sui file.",
+    advancedModeBody: "Intervieni sui file CSV, sui candidati e sui dati territoriali.",
+    startingData: "Dati di partenza",
+    elections2022: "Elezioni 2022",
+    customData: "Personalizza i dati",
+    advanced2022Body: "Usa il dataset completo del 2022, inclusi candidati, territori speciali ed Estero.",
     help: "Aiuto",
     reportBug: "Segnala un bug",
     giveFeedback: "Invia feedback",
@@ -115,7 +128,7 @@ const translations = {
     reportClose: "Chiudi",
     methodology: "Come funziona il calcolo: metodo, ipotesi e fonti",
     methodologyTitle: "Dal voto al seggio, passo per passo",
-    methodologyIntro: "Qui puoi controllare che cosa entra nel calcolo, quale regola viene applicata e dove finisce ogni seggio. La catena verificabile è: versione della legge → file di input → regole implementate → riparti → proclamazione.",
+    methodologyIntro: "Verifica sui dati 2022: eseguendo il calcolo in modalità Rosatellum, il simulatore restituisce i seggi corretti per ciascun partito e soltanto 6 nominativi di candidati non coincidono con il risultato ufficiale. Qui puoi controllare che cosa entra nel calcolo, quale regola viene applicata e dove finisce ogni seggio. La catena verificabile è: versione della legge → file di input → regole implementate → riparti → proclamazione.",
     methodologyStatusTitle: "Che cosa stai guardando",
     methodologyStatusBody: "La modalità Proposta 2026 applicata ai voti del 2022 risponde a una domanda controfattuale: «come sarebbero stati ripartiti quei voti se fossero valse queste regole?». Non ricostruisce il risultato ufficiale del 2022 e non prevede il voto futuro. La modalità Rosatellum applica invece il sistema usato nel 2022; il confronto esegue entrambi i motori sugli stessi file.",
     methodologyInputsTitle: "1. Quali dati entrano nel motore",
@@ -309,13 +322,13 @@ const translations = {
     sampleDownloadFailed: "2022 data download failed.",
     title: "Italian election simulator",
     lead: "Simulate parliamentary-seat allocation under the 2026 proposal, Rosatellum, or compare both systems.",
-    loadDemo: "Simulate with 2022 data",
+    loadDemo: "Simulate",
     backToMainMenu: "Back to main menu",
     demoLoadedRandomBonus: "2022 data loaded. The bonus list uses fictional candidates because it did not exist in 2022.",
     downloadSample: "Download 2022 ZIP",
     importJsonCsv: "Import your data",
     workflowTitle: "Build a simulation",
-    workflowLead: "Use the 2022 election results directly, or edit votes and candidates.",
+    workflowLead: "First choose the rules, then how much detail to edit, and finally the starting data.",
     stepOneTitle: "Choose the mode",
     stepOneBody: "The mode determines the simulation rules. Compare laws shows the effects of the two systems side by side.",
     stepTwoTitle: "2. Prepare the data",
@@ -334,10 +347,19 @@ const translations = {
     downloadAndEdit: "Download files to edit",
     importAllFiles: "Upload files and simulate",
     demoAlternative: "The 2022 results are ready: run the simulation now, or customize the files.",
-    simulationMode: "Simulation mode",
+    simulationMode: "Electoral law",
     law2026: "2026 proposal",
     lawRosatellum: "Rosatellum",
     lawComparison: "Compare laws",
+    editingMode: "Mode",
+    simpleMode: "Simple",
+    advancedMode: "Advanced",
+    simpleModeBody: "Quickly edit party votes without working on candidates or files.",
+    advancedModeBody: "Work with CSV files, candidates and territorial data.",
+    startingData: "Starting data",
+    elections2022: "2022 election",
+    customData: "Customize the data",
+    advanced2022Body: "Use the complete 2022 dataset, including candidates, special territories and Foreign.",
     help: "Help",
     reportBug: "Report a bug",
     giveFeedback: "Send feedback",
@@ -355,7 +377,7 @@ const translations = {
     reportClose: "Close",
     methodology: "How the calculation works: method, assumptions, and sources",
     methodologyTitle: "From votes to seats, step by step",
-    methodologyIntro: "This guide shows what enters the calculation, which rule is applied, and where every seat goes. The reviewable chain is: law version → input files → implemented rules → allocations → candidate proclamation.",
+    methodologyIntro: "Check against the 2022 data: when run in Rosatellum mode, the simulator returns the correct seat count for each party, and only 6 candidate names differ from the official result. This guide shows what enters the calculation, which rule is applied, and where every seat goes. The reviewable chain is: law version → input files → implemented rules → allocations → candidate proclamation.",
     methodologyStatusTitle: "What this result means",
     methodologyStatusBody: "Running the 2026 Proposal mode on the 2022 vote asks a counterfactual question: “how would those votes have been allocated under these rules?”. It neither reconstructs the official 2022 result nor forecasts a future vote. Rosatellum mode applies the system used in 2022; comparison mode runs both engines on the same files.",
     methodologyInputsTitle: "1. Data entering the engine",
@@ -537,7 +559,7 @@ const translations = {
 type Translation = (typeof translations)[Language];
 
 export function ResultsPage() {
-  const { scenario, results, loadScenario, loadOnDataFiles, loadFixture } = useAppStore();
+  const { scenario, results, loadScenario, loadOnDataFiles, loadFixture, loadSimplifiedScenario } = useAppStore();
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
   const [loadingStatus, setLoadingStatus] = useState<string>();
@@ -553,10 +575,20 @@ export function ResultsPage() {
   const [simulationMode, setSimulationMode] = useState<SimulationMode>("2026");
   const [displayedSimulationMode, setDisplayedSimulationMode] = useState<SimulationMode>("2026");
   const [showMainMenu, setShowMainMenu] = useState(() => !results);
-  const [showCustomData, setShowCustomData] = useState(false);
+  const [editingMode, setEditingMode] = useState<EditingMode>("simple");
+  const [startingData, setStartingData] = useState<StartingData>("2022");
+  const [isSimplifiedResult, setIsSimplifiedResult] = useState(false);
   const [reportKind, setReportKind] = useState<ReportKind>();
   const t = translations[language];
   const themeToggleLabel = darkTheme ? t.themeLight : t.themeDark;
+  const selectEditingMode = (mode: EditingMode) => {
+    setEditingMode(mode);
+    if (mode === "simple") setStartingData("2022");
+  };
+  const selectStartingData = (data: StartingData) => {
+    setStartingData(data);
+    if (data === "custom") setEditingMode("advanced");
+  };
   const subtitle = t.lead;
   const subjectNameById = useMemo(() => buildSubjectNameById(scenario), [scenario]);
   const candidateById = useMemo(() => buildCandidateById(scenario), [scenario]);
@@ -578,11 +610,30 @@ export function ResultsPage() {
     try {
       await nextFrame();
       await loadFixture(lawVersionsForMode[simulationMode]);
+      setIsSimplifiedResult(false);
       setDisplayedSimulationMode(simulationMode);
       setShowMainMenu(false);
       setNotice(t.demoLoadedRandomBonus);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : t.demoLoadFailed);
+    } finally {
+      setLoadingStatus(undefined);
+    }
+  }
+
+  async function loadSimplified(simplified: SimplifiedScenarioRequest) {
+    setError(undefined);
+    setNotice(undefined);
+    setLoadingStatus("Costruzione dello scenario a percentuali e calcolo in corso...");
+    try {
+      await nextFrame();
+      await loadSimplifiedScenario(simplified, lawVersionsForMode[simulationMode]);
+      setDisplayedSimulationMode(simulationMode);
+      setIsSimplifiedResult(true);
+      setShowMainMenu(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : "Impossibile calcolare lo scenario semplificato.");
     } finally {
       setLoadingStatus(undefined);
     }
@@ -649,6 +700,7 @@ export function ResultsPage() {
         await loadScenario(loaded, lawVersionsForMode[simulationMode]);
       }
       setDisplayedSimulationMode(simulationMode);
+      setIsSimplifiedResult(false);
       setShowMainMenu(false);
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : t.importFailed);
@@ -807,13 +859,35 @@ export function ResultsPage() {
                   </label>
                 ))}
               </fieldset>
-              <p>{t.demoAlternative}</p>
+              <fieldset className="lawModePicker editingModePicker">
+                <legend>{t.editingMode}</legend>
+                {(["simple", "advanced"] as const).map((mode) => (
+                  <label key={mode}>
+                    <input type="radio" name="editing-mode" checked={editingMode === mode} onChange={() => selectEditingMode(mode)} />
+                    {mode === "simple" ? t.simpleMode : t.advancedMode}
+                  </label>
+                ))}
+              </fieldset>
+              <p className="modeDescription">{editingMode === "simple" ? t.simpleModeBody : t.advancedModeBody}</p>
+              {editingMode === "advanced" ? <fieldset className="lawModePicker startingDataPicker">
+                <legend>{t.startingData}</legend>
+                {(["2022", "custom"] as const).map((data) => (
+                  <label key={data}>
+                    <input type="radio" name="starting-data" checked={startingData === data} onChange={() => selectStartingData(data)} />
+                    {data === "2022" ? t.elections2022 : t.customData}
+                  </label>
+                ))}
+              </fieldset> : null}
+            </div>
+            {startingData === "2022" && editingMode === "simple" ? <SimplifiedScenarioEditor onCalculate={(request) => void loadSimplified(request)} calculating={Boolean(loadingStatus)} /> : null}
+            {startingData === "2022" && editingMode === "advanced" ? <section className="advanced2022Setup" aria-label={t.elections2022}>
+              <p>{t.advanced2022Body}</p>
               <div className="simulationCtas">
                 <button type="button" className="primaryButton" onClick={() => void loadDemo()}>{t.loadDemo}</button>
-                <button type="button" className="secondaryButton" aria-expanded={showCustomData} onClick={() => setShowCustomData((shown) => !shown)}>{t.importJsonCsv}</button>
+                <button type="button" className="secondaryButton" onClick={() => void downloadSampleData()}>{t.downloadAndEdit}</button>
               </div>
-            </div>
-            {showCustomData ? <section className="customDataSetup" aria-label={t.importJsonCsv}>
+            </section> : null}
+            {startingData === "custom" ? <section className="customDataSetup" aria-label={t.customData}>
               <div className="setupSteps">
                 <section className="setupStep">
                   <h3>{t.stepTwoTitle}</h3><p>{t.stepTwoBody}</p>
@@ -851,7 +925,15 @@ export function ResultsPage() {
             const result = results[lawVersion];
             if (!result) return null;
             return (
-              <SimulationReport
+              isSimplifiedResult ? <ListOnlySimulationReport
+                key={lawVersion}
+                className={displayedSimulationMode === "comparison" ? "comparisonColumn" : undefined}
+                title={displayedSimulationMode === "comparison" ? (lawVersion === "ac-2822-a-2026-07-16" ? t.law2026 : t.lawRosatellum) : undefined}
+                scenario={scenario ? { ...scenario, lawVersion } : scenario}
+                result={result}
+                subjectNameById={subjectNameById}
+                t={t}
+              /> : <SimulationReport
                 key={lawVersion}
                 className={displayedSimulationMode === "comparison" ? "comparisonColumn" : undefined}
                 title={displayedSimulationMode === "comparison" ? (lawVersion === "ac-2822-a-2026-07-16" ? t.law2026 : t.lawRosatellum) : undefined}
@@ -1046,6 +1128,153 @@ function SimulationReport({
       </div>
     </div>
   );
+}
+
+/** The percentage workflow deliberately has no candidate-facing UI. */
+function ListOnlySimulationReport({
+  className,
+  title,
+  scenario,
+  result,
+  subjectNameById,
+  t
+}: {
+  className?: string;
+  title?: string;
+  scenario?: ElectionInput;
+  result: ElectionSimulationResult;
+  subjectNameById: Map<string, string>;
+  t: Translation;
+}) {
+  return (
+    <div className={className}>
+      {title ? <h2 className="comparisonTitle">{title}</h2> : null}
+      <div className="resultCards">
+        <CollapsibleCard title={t.nationalResults} meta={`${nationalSubjectCount(result)} ${t.subjects}`} section="national">
+          <ChamberResult chamber="camera" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} listOnly includeForeign />
+          <ChamberResult chamber="senate" scenario={scenario} result={result} subjectNameById={subjectNameById} t={t} listOnly includeForeign />
+          <ListOnlyThresholds result={result} subjectNameById={subjectNameById} t={t} />
+        </CollapsibleCard>
+        <CollapsibleCard title={t.bonusDetails} meta={result.bonus.awarded ? t.bonusYes : t.bonusNo} section="bonus">
+          <ListOnlyBonus result={result} subjectNameById={subjectNameById} t={t} />
+        </CollapsibleCard>
+      </div>
+    </div>
+  );
+}
+
+function ListOnlyThresholds({ result, subjectNameById, t }: { result: ElectionSimulationResult; subjectNameById: Map<string, string>; t: Translation }) {
+  return <div className="chamberBlock"><h3>{t.thresholds}</h3>{(["camera", "senate"] as const).map((chamber) => {
+    const threshold = result.thresholds[chamber];
+    if (!threshold) return null;
+    const admitted = [...threshold.admittedCoalitions, ...threshold.admittedSingleLists, ...Object.values(threshold.admittedCoalitionLists).flat()];
+    return <div key={chamber}><h4>{formatChamber(chamber, t)}</h4><p><strong>Ammesse:</strong> {admitted.length ? [...new Set(admitted)].map((id) => subjectNameById.get(id) ?? id).join(", ") : "—"}</p><p><strong>{t.excluded}:</strong> {threshold.excludedLists.length ? threshold.excludedLists.map((id) => subjectNameById.get(id) ?? id).join(", ") : "—"}</p></div>;
+  })}</div>;
+}
+
+function ListOnlyBonus({ result, subjectNameById, t }: { result: ElectionSimulationResult; subjectNameById: Map<string, string>; t: Translation }) {
+  const winner = result.bonus.winnerId ? subjectNameById.get(result.bonus.winnerId) ?? result.bonus.winnerId : "-";
+  return <div className="bonusReport"><dl className="bonusSummary">
+    <div><dt>{t.bonusStatus}</dt><dd>{result.bonus.awarded ? t.bonusYes : t.bonusNo}</dd></div>
+    <div><dt>{t.bonusWinner}</dt><dd>{result.bonus.awarded ? winner : "-"}</dd></div>
+    <div><dt>{formatChamber("camera", t)}</dt><dd>{bonusSeatsFor(result, "camera")} {t.seats}</dd></div>
+    <div><dt>{formatChamber("senate", t)}</dt><dd>{bonusSeatsFor(result, "senate")} {t.seats}</dd></div>
+  </dl>
+  {!result.bonus.awarded && result.bonus.failedConditions.length > 0 ? <p className="muted">{result.bonus.failedConditions.join(" ")}</p> : null}
+  </div>;
+}
+
+function SimplifiedScenarioEditor({ onCalculate, calculating }: { onCalculate: (request: SimplifiedScenarioRequest) => void; calculating: boolean }) {
+  const [lists, setLists] = useState<SimplifiedList[]>(() => simplifiedListCatalog.map((item) => ({ ...item, percentage: defaultSimplifiedPercentages[item.id] ?? 0 })));
+  const [coalitions, setCoalitions] = useState<SimplifiedCoalition[]>(() => defaultSimplifiedCoalitions.map((coalition) => ({ ...coalition, listIds: [...coalition.listIds] })));
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [coalitionDialogOpen, setCoalitionDialogOpen] = useState(false);
+  const [partyName, setPartyName] = useState("");
+  const [coalitionName, setCoalitionName] = useState("");
+  const [coalitionAlias, setCoalitionAlias] = useState("");
+  const [coalitionMembers, setCoalitionMembers] = useState<Set<string>>(() => new Set());
+  const [editingCoalitionId, setEditingCoalitionId] = useState<string>();
+  const total = lists.reduce((sum, list) => sum + list.percentage, 0);
+  const updatePercentage = (id: string, percentage: number) => setLists((current) => current.map((list) => list.id === id ? { ...list, percentage: Math.max(0, Math.min(10_000, percentage)) } : list));
+  const assignedListIds = new Set(coalitions.filter((coalition) => coalition.id !== editingCoalitionId).flatMap((coalition) => coalition.listIds));
+  const resetCoalitionEditor = () => {
+    setEditingCoalitionId(undefined);
+    setCoalitionName("");
+    setCoalitionAlias("");
+    setCoalitionMembers(new Set());
+  };
+  const openNewCoalition = () => {
+    resetCoalitionEditor();
+    setCoalitionDialogOpen(true);
+  };
+  const openCoalitionEditor = (coalition: SimplifiedCoalition) => {
+    setEditingCoalitionId(coalition.id);
+    setCoalitionName(coalition.name);
+    setCoalitionAlias(coalition.alias ?? "");
+    setCoalitionMembers(new Set(coalition.listIds));
+    setCoalitionDialogOpen(true);
+  };
+  const closeCoalitionDialog = () => {
+    setCoalitionDialogOpen(false);
+    resetCoalitionEditor();
+  };
+  const saveCoalition = (event: FormEvent) => {
+    event.preventDefault();
+    if (!coalitionName.trim() || coalitionMembers.size === 0) return;
+    const value = { name: coalitionName.trim(), alias: coalitionAlias.trim() || undefined, listIds: [...coalitionMembers] };
+    if (editingCoalitionId) setCoalitions((current) => current.map((coalition) => coalition.id === editingCoalitionId ? { ...coalition, ...value } : coalition));
+    else setCoalitions((current) => [...current, { id: `coalition-user-${slugForUi(coalitionName)}-${Date.now()}`, ...value }]);
+    closeCoalitionDialog();
+  };
+  const createParty = (event: FormEvent) => {
+    event.preventDefault();
+    const name = partyName.trim();
+    if (!name) return;
+    setLists((current) => [...current, { id: `party-user-${slugForUi(name)}-${Date.now()}`, name, percentage: 0 }]);
+    setPartyName(""); setDialogOpen(false);
+  };
+  const renameList = (list: SimplifiedList) => {
+    const name = window.prompt("Nuovo nome del partito", list.name);
+    if (name?.trim()) setLists((current) => current.map((entry) => entry.id === list.id ? { ...entry, name: name.trim() } : entry));
+  };
+  const removeList = (list: SimplifiedList) => {
+    setLists((current) => current.filter((entry) => entry.id !== list.id));
+    setCoalitions((current) => current.map((coalition) => ({ ...coalition, listIds: coalition.listIds.filter((id) => id !== list.id) })).filter((coalition) => coalition.listIds.length));
+  };
+  const coalitionNameByListId = new Map(coalitions.flatMap((coalition) => coalition.listIds.map((listId) => [listId, coalition.alias ?? coalition.name] as const)));
+  const listById = new Map(lists.map((list) => [list.id, list]));
+  return <section className="simpleScenarioSetup" aria-label="Modalità semplificata">
+    <div className="setupHeading"><span className="simpleSectionEyebrow">Modalità semplificata</span><h3>Partiti</h3><p>Modifica le quote nazionali: per ogni lista, la stessa percentuale viene applicata in ogni territorio.</p></div>
+    <div className="simpleTotalRow"><p className={total === 10_000 ? "simpleTotal valid" : "simpleTotal invalid"}>Totale quote <strong>{(total / 100).toFixed(2)}%</strong></p><span>{total === 10_000 ? "Pronto per il calcolo" : "Il totale deve essere 100,00%"}</span></div>
+    <div className="simpleListGrid">
+      {lists.map((list) => <div className="simpleListRow" key={list.id}>
+        <div className="simpleListIdentity"><strong>{list.name}</strong>{coalitionNameByListId.get(list.id) ? <span className="partyCoalitionBadge">{coalitionNameByListId.get(list.id)}</span> : null}</div>
+        <div className="percentageControl"><input className="percentageNumber" aria-label={`Percentuale ${list.name}`} type="number" min="0" max="100" step="0.01" value={(list.percentage / 100).toFixed(2)} onChange={(event) => updatePercentage(list.id, Math.round(Number(event.target.value) * 100))} /><span>%</span></div>
+        <SimpleActionsMenu label={list.name} onRename={() => renameList(list)} onDelete={() => removeList(list)} />
+      </div>)}
+    </div>
+    <div className="simulationCtas simpleScenarioActions"><button type="button" className="secondaryButton" onClick={() => setDialogOpen(true)}>＋ Aggiungi partito</button><button type="button" className="primaryButton" disabled={total !== 10_000 || calculating} onClick={() => onCalculate({ lists, coalitions })}>Simula</button></div>
+    <details className="simpleCoalitions"><summary><span>Coalizioni</span><small>Opzionale</small></summary>
+      <div className="coalitionSectionIntro"><p>Definisci quali partiti corrono insieme.</p><button type="button" className="secondaryButton coalitionCreateButton" onClick={openNewCoalition}>＋ Nuova coalizione</button></div>
+      <div className="coalitionCards">{coalitions.map((coalition) => <div className="coalitionCard" key={coalition.id}>
+        <div className="coalitionCardHeader"><div><strong>{coalition.alias ?? coalition.name}</strong>{coalition.alias ? <span>{coalition.name}</span> : null}</div><SimpleActionsMenu label={coalition.name} onRename={() => openCoalitionEditor(coalition)} onDelete={() => { setCoalitions((current) => current.filter((item) => item.id !== coalition.id)); if (editingCoalitionId === coalition.id) resetCoalitionEditor(); }} /></div>
+        <div className="coalitionChips">{coalition.listIds.map((id) => <span className="coalitionChip" key={id}>{listById.get(id)?.name ?? id}</span>)}</div>
+      </div>)}</div>
+    </details>
+    {dialogOpen ? <dialog open className="simplePartyDialog" aria-modal="true" aria-labelledby="new-party-title"><form onSubmit={createParty}><header><span className="dialogEyebrow">Modalità semplificata</span><h3 id="new-party-title">Nuovo partito</h3><p>Aggiungi una lista e assegnale la percentuale che preferisci.</p></header><label><span>Nome del partito</span><input className="simpleTextInput" autoFocus placeholder="Es. Ora!" value={partyName} onChange={(event) => setPartyName(event.target.value)} /></label><div className="simulationCtas"><button type="button" className="secondaryButton" onClick={() => setDialogOpen(false)}>Annulla</button><button type="submit" className="primaryButton" disabled={!partyName.trim()}>Aggiungi partito</button></div></form></dialog> : null}
+    {coalitionDialogOpen ? <dialog open className="simplePartyDialog coalitionDialog" aria-modal="true" aria-labelledby="coalition-dialog-title"><form onSubmit={saveCoalition}><header><span className="dialogEyebrow">Modalità semplificata</span><h3 id="coalition-dialog-title">{editingCoalitionId ? "Modifica coalizione" : "Crea coalizione"}</h3><p>Assegna una o più liste alla coalizione.</p></header><div className="coalitionForm"><label>Nome<input className="simpleTextInput" autoFocus placeholder="Es. Alleanza civica" value={coalitionName} onChange={(event) => setCoalitionName(event.target.value)} /></label><label>Alias (facoltativo)<input className="simpleTextInput" placeholder="Es. AC" value={coalitionAlias} onChange={(event) => setCoalitionAlias(event.target.value)} /></label><div className="coalitionMembers">{lists.filter((list) => !assignedListIds.has(list.id)).map((list) => <label className="coalitionCheck" key={list.id}><input type="checkbox" checked={coalitionMembers.has(list.id)} onChange={() => setCoalitionMembers((current) => { const next = new Set(current); next.has(list.id) ? next.delete(list.id) : next.add(list.id); return next; })} /><span>{list.name}</span></label>)}</div></div><div className="simulationCtas"><button type="button" className="secondaryButton" onClick={closeCoalitionDialog}>Annulla</button><button type="submit" className="primaryButton" disabled={!coalitionName.trim() || coalitionMembers.size === 0}>{editingCoalitionId ? "Salva coalizione" : "Crea coalizione"}</button></div></form></dialog> : null}
+  </section>;
+}
+
+function SimpleActionsMenu({ label, onRename, onDelete }: { label: string; onRename: () => void; onDelete: () => void }) {
+  return <details className="simpleActionsMenu">
+    <summary aria-label={`Azioni per ${label}`}>⋯</summary>
+    <div className="simpleActionsMenuPanel"><button type="button" onClick={onRename}>Rinomina</button><button type="button" onClick={onDelete}>Elimina</button></div>
+  </details>;
+}
+
+function slugForUi(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "partito";
 }
 
 function CollapsibleCard({
@@ -1658,13 +1887,17 @@ function ChamberResult({
   scenario,
   result,
   subjectNameById,
-  t
+  t,
+  listOnly = false,
+  includeForeign = false
 }: {
   chamber: Chamber;
   scenario: ElectionInput | undefined;
   result: ElectionSimulationResult;
   subjectNameById: Map<string, string>;
   t: Translation;
+  listOnly?: boolean;
+  includeForeign?: boolean;
 }) {
   const national = result.nationalResults[chamber];
   const [expandedCoalitions, setExpandedCoalitions] = useState<Set<string>>(() => new Set());
@@ -1672,6 +1905,7 @@ function ChamberResult({
   const displayVoteTotals = useMemo(() => {
     if (!scenario) return undefined;
     const totals = aggregateVotes(scenario, true)[chamber];
+    if (listOnly) return totals;
 
     // Special direct mandates have candidate tallies rather than list-vote
     // rows. Include the winning tally in the results display without feeding
@@ -1701,7 +1935,26 @@ function ChamberResult({
     }
     return totals;
   }, [scenario, chamber]);
-  const rows = national ? Object.entries(national.seats).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])) : [];
+  const seats = useMemo(() => {
+    const combined = { ...(national?.seats ?? {}) };
+    if (!includeForeign) return combined;
+    const foreign = result.foreignResults[chamber === "camera" ? "camera" : "senato"];
+    for (const partition of foreign?.partitionResults ?? []) for (const [listId, count] of Object.entries(partition.seats)) {
+      const subjectId = scenario?.lists.find((list) => list.id === listId)?.coalitionId ?? listId;
+      combined[subjectId] = (combined[subjectId] ?? 0) + count;
+    }
+    return combined;
+  }, [chamber, includeForeign, national?.seats, result.foreignResults, scenario?.lists]);
+  const rows = national
+    ? (listOnly
+      ? [...new Set([
+          ...Object.keys(seats),
+          ...(scenario?.coalitions.map((coalition) => coalition.id) ?? []),
+          ...(scenario?.lists.filter((list) => !list.coalitionId).map((list) => list.id) ?? [])
+        ])].map((id) => [id, seats[id] ?? 0] as const)
+      : Object.entries(seats))
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    : [];
   if (!national) return null;
   const displayTotalValidVotes = displayVoteTotals?.totalValidVotes ?? national.totalValidVotes;
   const listVoteTotals = displayVoteTotals?.listVotes ?? {};

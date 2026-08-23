@@ -494,6 +494,16 @@ h1 {
   border-top: 1px solid var(--border);
 }
 
+.advanced2022Setup {
+  border-top: 1px solid var(--border);
+  padding: 1.25rem;
+}
+
+.advanced2022Setup > p {
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+
 .setupStep {
   border-right: 1px solid var(--border);
   display: flex;
@@ -1590,4 +1600,96 @@ th {
   .helpDialog {
     max-height: calc(100vh - 2rem);
   }
+}
+
+.simpleScenarioSetup {
+  width: 100%;
+  margin: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.simpleScenarioSetup .setupHeading { display: grid; gap: 0.4rem; padding: 0 0 1.25rem; background: transparent; border: 0; }
+.simpleScenarioSetup .setupHeading h3 { margin: 0; font-size: clamp(1.35rem, 2vw, 1.7rem); }
+.simpleScenarioSetup .setupHeading p { max-width: 44rem; margin: 0; color: var(--muted); line-height: 1.5; }
+.simpleSectionEyebrow { color: var(--primary); font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.simpleTotalRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: 0.7rem; background: var(--surface-muted); }
+.simpleTotalRow p { margin: 0; }
+.simpleTotalRow > span { color: var(--muted); font-size: 0.85rem; }
+.simpleTotal { font-weight: 700; }
+.simpleTotal.valid { color: #17803d; }
+.simpleTotal.invalid { color: #b54708; }
+.simpleListGrid { display: grid; gap: 0.4rem; }
+.simpleListRow { display: grid; grid-template-columns: minmax(0, 1fr) 7.25rem 2.5rem; gap: 1rem; align-items: center; min-height: 3.5rem; padding: 0.55rem 0.75rem; border: 1px solid transparent; border-radius: 0.7rem; transition: border-color 120ms ease, background 120ms ease; }
+.simpleListRow:hover { border-color: var(--border); background: var(--surface-muted); }
+.simpleListIdentity { display: flex; min-width: 0; align-items: center; gap: 0.55rem; }
+.simpleListIdentity strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.partyCoalitionBadge { flex: 0 1 auto; max-width: 12rem; overflow: hidden; padding: 0.25rem 0.5rem; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); border-radius: 999px; color: var(--accent); font-size: 0.72rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.percentageControl { display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; padding: 0.35rem 0.55rem; border: 1px solid var(--border); border-radius: 0.55rem; background: var(--surface); transition: border-color 120ms ease, box-shadow 120ms ease; }
+.percentageControl:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.percentageNumber { width: 4.2rem; padding: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 0.95rem; font-variant-numeric: tabular-nums; text-align: right; }
+.percentageControl span { color: var(--muted); font-size: 0.82rem; font-weight: 800; }
+.simpleActionsMenu { position: relative; justify-self: end; }
+.simpleActionsMenu summary { display: grid; width: 2rem; height: 2rem; place-items: center; border-radius: 0.45rem; color: var(--muted); cursor: pointer; font-size: 1.25rem; font-weight: 800; line-height: 1; list-style: none; }
+.simpleActionsMenu summary::-webkit-details-marker { display: none; }
+.simpleActionsMenu summary:hover, .simpleActionsMenu[open] summary { background: var(--surface-muted); color: var(--text); }
+.simpleActionsMenuPanel { position: absolute; z-index: 3; top: calc(100% + 0.3rem); right: 0; display: grid; min-width: 8rem; padding: 0.3rem; border: 1px solid var(--border); border-radius: 0.6rem; background: var(--surface); box-shadow: 0 12px 28px rgb(0 0 0 / 16%); }
+.simpleActionsMenuPanel button { border: 0; border-radius: 0.35rem; background: transparent; color: var(--text); cursor: pointer; padding: 0.5rem 0.65rem; text-align: left; }
+.simpleActionsMenuPanel button:hover { background: var(--surface-muted); }
+.simpleScenarioActions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.simpleScenarioActions .primaryButton { min-width: 8rem; }
+.simpleCoalitions { margin-top: 1.75rem; border-top: 1px solid var(--border); }
+.simpleCoalitions > summary { display: flex; align-items: center; gap: 0.65rem; padding: 1.1rem 0 0.85rem; font-size: 1.05rem; font-weight: 800; cursor: pointer; }
+.simpleCoalitions > summary::after { margin-left: auto; color: var(--accent); content: "Apri"; font-size: 0.78rem; font-weight: 800; }
+.simpleCoalitions[open] > summary::after { content: "Chiudi"; }
+.simpleCoalitions > summary small { color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.simpleCoalitions > summary::marker { color: var(--accent); }
+.coalitionSectionIntro { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.85rem; }
+.coalitionSectionIntro p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.coalitionCreateButton { flex: 0 0 auto; padding: 0.65rem 0.9rem; }
+.coalitionCards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.coalitionCard { display: grid; gap: 0.8rem; min-width: 0; padding: 0.9rem; border: 1px solid var(--border); border-radius: 0.75rem; background: var(--surface-muted); }
+.coalitionCardHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.coalitionCardHeader > div { display: grid; min-width: 0; gap: 0.2rem; }
+.coalitionCardHeader strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coalitionCardHeader span { color: var(--muted); font-size: 0.75rem; }
+.coalitionChips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.coalitionChip { min-width: 0; max-width: 100%; overflow: hidden; padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 0.75rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.coalitionForm { display: grid; gap: 0.6rem; margin: 0.8rem 0; }
+.coalitionForm > label { display: grid; gap: 0.35rem; color: var(--muted); font-size: 0.82rem; font-weight: 800; }
+.simpleTextInput { width: 100%; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 0.65rem; outline: 0; background: var(--surface-muted); color: var(--text); font: inherit; box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%); transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease; }
+.simpleTextInput::placeholder { color: var(--muted); opacity: 0.72; }
+.simpleTextInput:hover { border-color: var(--muted); }
+.simpleTextInput:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+.coalitionMembers { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+.coalitionCheck { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-muted); cursor: pointer; transition: border-color 120ms ease, background 120ms ease, color 120ms ease; }
+.coalitionCheck:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 13%, var(--surface-muted)); color: var(--accent); }
+.coalitionCheck input { appearance: none; display: grid; place-content: center; width: 1.05rem; height: 1.05rem; margin: 0; border: 2px solid var(--muted); border-radius: 0.28rem; background: var(--surface); }
+.coalitionCheck input::after { content: ""; width: 0.48rem; height: 0.25rem; border: solid white; border-width: 0 0 2px 2px; transform: rotate(-45deg) scale(0); transition: transform 120ms ease; }
+.coalitionCheck input:checked { border-color: var(--accent); background: var(--accent); }
+.coalitionCheck input:checked::after { transform: rotate(-45deg) scale(1); }
+.coalitionCheck input:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 32%, transparent); outline-offset: 2px; }
+.simplePartyDialog { position: fixed; inset: 50% auto auto 50%; width: min(calc(100vw - 2rem), 29rem); margin: 0; transform: translate(-50%, -50%); border: 1px solid var(--border); border-radius: 1rem; box-shadow: 0 24px 70px rgb(0 0 0 / 38%); padding: 0; color: var(--text); background: var(--surface); overflow: hidden; }
+.coalitionDialog { width: min(calc(100vw - 2rem), 40rem); }
+.simplePartyDialog::backdrop { background: rgb(5 12 16 / 58%); backdrop-filter: blur(3px); }
+.simplePartyDialog form { display: grid; gap: 1.2rem; padding: 1.5rem; }
+.simplePartyDialog header { display: grid; gap: 0.35rem; }
+.simplePartyDialog h3, .simplePartyDialog p { margin: 0; }
+.simplePartyDialog h3 { font-size: 1.35rem; }
+.simplePartyDialog p { color: var(--muted); line-height: 1.45; }
+.dialogEyebrow { color: var(--primary); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.simplePartyDialog form > label { display: grid; gap: 0.4rem; color: var(--muted); font-size: 0.82rem; font-weight: 800; }
+.simplePartyDialog .simulationCtas { justify-content: flex-end; margin-top: 0.2rem; }
+
+@media (max-width: 720px) {
+  .simpleListRow { grid-template-columns: minmax(0, 1fr) 6.7rem 2rem; gap: 0.45rem; padding-inline: 0.4rem; }
+  .simpleListIdentity { display: grid; gap: 0.25rem; }
+  .partyCoalitionBadge { width: fit-content; }
+  .simpleTotalRow, .coalitionSectionIntro { align-items: flex-start; flex-direction: column; }
+  .simpleScenarioActions { align-items: stretch; }
+  .simpleScenarioActions button { flex: 1; }
+  .coalitionCards { grid-template-columns: 1fr; }
+  .coalitionCreateButton { width: 100%; }
 }
