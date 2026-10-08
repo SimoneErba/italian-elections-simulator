@@ -1,8 +1,8 @@
 # Italian Elections Simulator
 
-A browser-based simulator for Italian parliamentary election scenarios. The app
-loads bundled 2022 election inputs, applies the implemented electoral rules, and
-shows how seat allocation changes under different vote distributions.
+https://simoneerba.github.io/italian-elections-simulator/
+
+A browser-based simulator for Italian parliamentary election scenarios, for both Rotellum and the new 2026 law.
 
 ## Features
 
@@ -132,9 +132,3 @@ preferences used by the client.
 Keep bulky upstream archives outside Git and record their source URL and
 checksum in the relevant `data/**/sources/MANIFEST.md`. See
 `data/README.md` for the full column-level import contract and source notes.
-
-## GitHub Pages
-
-The workflow in `.github/workflows/pages.yml` runs on every push to `main`.
-It installs dependencies, runs the test suite, builds with the GitHub Pages base
-path, uploads `dist`, and deploys it through GitHub Pages.
