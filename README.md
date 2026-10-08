@@ -2,7 +2,7 @@
 
 https://simoneerba.github.io/italian-elections-simulator/
 
-A browser-based simulator for Italian parliamentary election scenarios, for both Rotellum and the new 2026 law.
+A browser-based simulator for Italian parliamentary election scenarios, for both Rosatellum and the new 2026 law.
 
 ## Features
 
@@ -10,7 +10,6 @@ A browser-based simulator for Italian parliamentary election scenarios, for both
 - Coalition, threshold, territorial, foreign constituency, and candidate
   allocation logic.
 - AC 2822-A governability bonus calculations with traceable rule modules.
-- Client-side Vite/React app that can be deployed as a static site.
 
 ## Electoral law: AC 2822-A
 
